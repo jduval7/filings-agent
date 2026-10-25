@@ -931,22 +931,3 @@ is the strength of the filing's evidence, decided without looking at model resul
 would have raised the agent's score (one of its two fresh misses is AFL), which would look like
 removing a hard case after seeing the results.
 
-
-## 2026-10-25: Review re-asks through a conditional edge, not a loop around interrupt()
-
-**Why:** the review node re-asked an invalid answer in a `while True` loop around `interrupt()`.
-LangGraph's interrupts guide says not to: "Do not loop `interrupt` calls using logic that isn't
-deterministic across executions, including `while True` validation loops. Use a conditional edge
-instead." Ours was deterministic (each turn depended only on the resume values, which replay in
-order), but it relied on index-based resume matching inside one node and wasn't the documented
-pattern.
-
-**Change:** one `interrupt()` per pass through `review`. An invalid answer is written to state as
-`review_problems` and the node returns; `after_review` routes back to `review`, which asks again
-showing the problems. A valid answer clears them. Behaviour is unchanged (the earlier test, "asked
-again with the reasons, then recovers", passes as is). New test: after a refused answer the waiting
-task is a new `review` step with exactly one interrupt; it fails on the old code (the step counter
-stayed at 4). `GRAPH_VERSION` is unchanged: what a run publishes doesn't change, and a thread paused
-by the old code resumes into the new node.
-
-Checked: 420 tests, coverage 95.2%, `make demo-check`, `make smoke` (all checks, $0), `make web-e2e` 4/4.
