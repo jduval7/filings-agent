@@ -1,0 +1,10 @@
+# Quality bar enforced in CI (see DECISIONS.md for why these numbers).
+tolerance: 0.02            # max drop vs evals/baseline.json before a change is blocked
+extract:
+  f1_min: 0.97
+  not_reported_min: 0.9
+  schema_error_max: 0.05
+reconcile:
+  cause_accuracy_min: 0.85
+  quote_verified_min: 0.9
+  easy_lane_accuracy_min: 1.0   # auto-approved changes skip review: none may be wrong

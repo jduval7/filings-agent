@@ -1,0 +1,7 @@
+{
+  "extract.f1": 1.0,
+  "extract.not_reported_accuracy": 1.0,
+  "extract.schema_error_rate_inv": 1.0,
+  "reconcile.cause_accuracy": 1.0,
+  "reconcile.quote_verified_rate": 1.0
+}

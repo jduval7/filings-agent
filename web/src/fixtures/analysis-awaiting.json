@@ -1,0 +1,105 @@
+{
+  "awaiting_review": [
+    {
+      "candidates": [
+        {
+          "cause": "stock_split",
+          "evidence": [],
+          "fit": "ruled_out",
+          "research": [],
+          "research_not_shown": 0,
+          "why": "a stock split changes share counts, not dollar amounts (ASC 260-10-55-12: splits restate share counts and per-share amounts only)"
+        },
+        {
+          "cause": "discontinued_operations",
+          "evidence": [],
+          "fit": "no_evidence",
+          "research": [],
+          "research_not_shown": 0,
+          "why": "not mentioned in the filing(s) where the number changed"
+        },
+        {
+          "cause": "accounting_change",
+          "evidence": [],
+          "fit": "no_evidence",
+          "research": [],
+          "research_not_shown": 0,
+          "why": "not mentioned in the filing(s) where the number changed"
+        },
+        {
+          "cause": "reclassification",
+          "evidence": [],
+          "fit": "no_evidence",
+          "research": [],
+          "research_not_shown": 0,
+          "why": "not mentioned in the filing(s) where the number changed"
+        }
+      ],
+      "change": "revenue FY2023: 100 -> 60 (-40.0%)",
+      "changed_in": [
+        "0000000001-25-000001"
+      ],
+      "decide": {
+        "escalate": "action 'escalate' if no candidate explains it; the number is published flagged as unresolved",
+        "pick": "set correct_cause to the cause you judge right, and action to 'accept' (use the recast value) or 'use_original'",
+        "research": "action 'research' (note = optional hint, e.g. 'check for an 8-K') to have the research agent dig further and show this card again"
+      },
+      "id": "AAA:revenue:FY2023",
+      "other_causes": [],
+      "research_rounds": [],
+      "research_rounds_left": 2,
+      "values": [
+        [
+          "0000000001-24-000001",
+          "100"
+        ],
+        [
+          "0000000001-25-000001",
+          "60"
+        ]
+      ]
+    }
+  ],
+  "branches": 6,
+  "branches_done": 0,
+  "cached_branches": 0,
+  "cost_usd": 0,
+  "decisions": {},
+  "discrepancies": 2,
+  "errors": {},
+  "facts": 6,
+  "last_run_id": "run-1",
+  "memo": null,
+  "paid_usd": 0,
+  "publication": null,
+  "rejected": 0,
+  "research_rounds": 0,
+  "resolutions": {
+    "AAA:cash:FY2023": {
+      "cause": "immaterial_revision",
+      "lane": null,
+      "needs_review": false,
+      "verified": true
+    },
+    "AAA:revenue:FY2023": {
+      "cause": null,
+      "lane": "review",
+      "needs_review": true,
+      "verified": true
+    }
+  },
+  "review_problems": {},
+  "review_token": "7b23425dc0afc143",
+  "runs": [
+    {
+      "kind": "start",
+      "run_id": "run-1",
+      "started_at": "2026-10-23T12:00:00+00:00"
+    }
+  ],
+  "status": "awaiting_review",
+  "thread_id": "f16d05ec6b29248d",
+  "tickers": [
+    "AAA"
+  ]
+}

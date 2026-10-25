@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    "."
+  ],
+  "graphs": {
+    "filings_agent": "./src/filings_agent/graph/studio_demo.py:graph"
+  },
+  "python_version": "3.12"
+}

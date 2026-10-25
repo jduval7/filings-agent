@@ -1,0 +1,92 @@
+# Three jobs on every PR:
+#   check  - lint, strict types, unit tests (no network, no LLM, no secrets)
+#   web    - review UI: strict TypeScript, Vitest, production build
+#   gate   - eval regression gate against evals/baseline.json (real Bedrock calls, but cached:
+#            an unchanged prompt/model costs $0; a changed one pays only for what changed).
+#            Runs only when its secrets are configured; otherwise skipped with a notice.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync
+      - run: make check
+      - run: make cov
+      # The demo must work for anyone: no secrets here, no network calls allowed in it.
+      - run: make demo-check
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  # The gate makes real (cached) Bedrock calls, so it needs three repository secrets. A fork or a
+  # fresh clone without them gets a skipped gate with a note, not a red build.
+  gate-config:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.secrets.outputs.ready }}
+    steps:
+      - id: secrets
+        env:
+          AWS_CI_ROLE_ARN: ${{ secrets.AWS_CI_ROLE_ARN }}
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        run: |
+          if [ -n "$AWS_CI_ROLE_ARN" ] && [ -n "$SEC_USER_AGENT" ] && [ -n "$LANGSMITH_API_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            msg="Eval gate skipped: set repository secrets AWS_CI_ROLE_ARN, SEC_USER_AGENT and LANGSMITH_API_KEY to enable it (RUNBOOK.md, section 3). Run it locally with: make gate"
+            echo "::notice title=Eval gate skipped::$msg"
+            echo "### Eval gate skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "$msg" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  gate:
+    needs: [check, gate-config]
+    if: needs.gate-config.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # OIDC to AWS: no long-lived keys in CI
+      contents: read
+    env:
+      SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: filings-agent-ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_CI_ROLE_ARN }}   # bedrock:InvokeModel only
+          aws-region: us-east-1
+      - name: Restore SEC data + LLM cache
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: data-${{ hashFiles('configs/**', 'src/filings_agent/steps/**') }}
+          restore-keys: data-
+      - run: uv sync
+      - run: make data
+      - run: make gate

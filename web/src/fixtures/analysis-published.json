@@ -1,0 +1,75 @@
+{
+  "awaiting_review": [],
+  "branches": 6,
+  "branches_done": 0,
+  "cached_branches": 0,
+  "cost_usd": 0.001,
+  "decisions": {
+    "AAA:revenue:FY2023": {
+      "action": "accept",
+      "actor": "local",
+      "correct_cause": "discontinued_operations",
+      "decided_at": "2026-10-23T12:00:00+00:00",
+      "note": "spin-off recast"
+    }
+  },
+  "discrepancies": 2,
+  "errors": {},
+  "facts": 6,
+  "last_run_id": "run-3",
+  "memo": {
+    "attempts": 1,
+    "markdown": "# AAA summary\n\nRevenue was recast after a spin-off.\n\n## Caveats\n\nFY2023 recast.",
+    "table": "ticker | metric | fiscal year | value | changed_by\nAAA | cash | FY2023 | $0M | immaterial_revision\nAAA | operating_cash_flow | FY2023 | $0M | \nAAA | revenue | FY2023 | $0M | discontinued_operations\n\nYear-over-year changes:\n",
+    "unverified": [],
+    "verified": true
+  },
+  "paid_usd": 0.001,
+  "publication": {
+    "facts": 6,
+    "newly_published": true,
+    "published_at": "2026-10-23T12:00:00+00:00",
+    "resolutions": 2,
+    "thread_id": "f16d05ec6b29248d"
+  },
+  "rejected": 0,
+  "research_rounds": 1,
+  "resolutions": {
+    "AAA:cash:FY2023": {
+      "cause": "immaterial_revision",
+      "lane": null,
+      "needs_review": false,
+      "verified": true
+    },
+    "AAA:revenue:FY2023": {
+      "cause": "discontinued_operations",
+      "lane": "review",
+      "needs_review": true,
+      "verified": true
+    }
+  },
+  "review_problems": {},
+  "review_token": null,
+  "runs": [
+    {
+      "kind": "start",
+      "run_id": "run-1",
+      "started_at": "2026-10-23T12:00:00+00:00"
+    },
+    {
+      "kind": "review",
+      "run_id": "run-2",
+      "started_at": "2026-10-23T12:00:00+00:00"
+    },
+    {
+      "kind": "review",
+      "run_id": "run-3",
+      "started_at": "2026-10-23T12:00:00+00:00"
+    }
+  ],
+  "status": "published",
+  "thread_id": "f16d05ec6b29248d",
+  "tickers": [
+    "AAA"
+  ]
+}

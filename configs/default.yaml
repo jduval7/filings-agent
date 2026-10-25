@@ -1,0 +1,135 @@
+# The only file that changes between setups. Everything else reads from here.
+
+sec:
+  # SEC requires a contact in the User-Agent. Set SEC_USER_AGENT="Your Name you@example.com".
+  user_agent_env: SEC_USER_AGENT
+  max_requests_per_second: 5   # SEC allows 10; stay well under
+
+data_dir: data
+
+filings:
+  form: 10-K
+  filed_since: "2023-01-01"    # ~4 filings per company: enough to see restatements
+  reconcile_filed_since: "2022-01-01"
+
+companies:
+  # Messy: restatements we want the agent to catch
+  - GE     # spin-offs (HealthCare 2023, Vernova 2024) recast prior revenue
+  - NVDA   # 4:1 (2021) and 10:1 (2024) stock splits; 52/53-week year ending late Jan
+  - WMT    # 3:1 stock split (2024); fiscal year ends Jan 31
+  - PFE    # revenue reclassification; no operating-income line on its statement
+  # Clean controls with unusual fiscal year-ends
+  - AAPL   # late September
+  - MSFT   # June
+  - NKE    # May
+  - KO     # December
+
+# Extra restatement cases for the reconcile step only (no extraction cost).
+reconcile_companies:
+  - AMZN   # 20:1 split (2022)
+  - TSLA   # 3:1 split (2022)
+  - CMG    # 50:1 split (2024)
+  - AVGO   # 10:1 split (2024)
+  - JNJ    # Kenvue spin-off (2023)
+  - MMM    # Solventum spin-off (2024)
+  - DHR    # Veralto spin-off (2023)
+  # Fresh split (added 2026-10-22, after every choice was frozen): life insurers that adopted
+  # ASU 2018-12 (LDTI) on 2023-01-01 and restated 2021-22. Accounting changes at companies never
+  # seen while tuning: the generalization check for reconcile and research.
+  - MET
+  - PRU
+  - AFL
+  - LNC
+  - GL
+  - UNM
+
+# Tune on dev, report on test. Split by company so test filings are never seen while tuning.
+# Both splits get stock splits AND spin-offs; only test has a reclassification (PFE).
+splits:
+  dev: [GE, NVDA, AAPL, MSFT, KO, AMZN, CMG, JNJ, DHR]
+  test: [WMT, PFE, NKE, TSLA, AVGO, MMM]
+  fresh: [MET, PRU, AFL, LNC, GL, UNM]   # never tuned on, not in the CI gate; reported separately
+
+metrics:
+  - revenue
+  - operating_income
+  - net_income
+  - long_term_debt
+  - cash
+  - diluted_shares
+  - operating_cash_flow
+
+# ---------------------------------------------------------------------------------------------
+# Models. Every model is a config entry; swapping one is a one-line change in `roles`.
+# Prices: USD per 1M tokens (input, output), on-demand us-east-1, verified from the AWS Pricing
+# API on 2026-10-17 (Claude prices from Anthropic's published Bedrock rates). The spend guard and
+# the per-experiment cost metric both read these.
+# Ladder order = cheapest first. Claude Haiku 5.5 / Sonnet 5.5 are listed in Bedrock but this
+# account gets AccessDenied (model access not enabled), so they're not in the ladder yet.
+models:
+  nova-micro:     {provider: bedrock, id: us.amazon.nova-micro-v1:0,                   price: [0.035, 0.14]}
+  nova-lite:      {provider: bedrock, id: us.amazon.nova-lite-v1:0,                    price: [0.06, 0.24]}
+  gpt-oss-20b:    {provider: bedrock, id: openai.gpt-oss-20b-1:0,                      price: [0.07, 0.30]}
+  ministral-8b:   {provider: bedrock, id: mistral.ministral-3-8b-instruct,             price: [0.15, 0.15]}
+  qwen3-32b:      {provider: bedrock, id: qwen.qwen3-32b-v1:0,                         price: [0.15, 0.60]}
+  gpt-oss-120b:   {provider: bedrock, id: openai.gpt-oss-120b-1:0,                     price: [0.15, 0.60]}
+  nova-2-lite:    {provider: bedrock, id: us.amazon.nova-2-lite-v1:0,                  price: [0.30, 2.50]}
+  nova-pro:       {provider: bedrock, id: us.amazon.nova-pro-v1:0,                     price: [0.80, 3.20]}
+  claude-haiku-4.5: {provider: bedrock, id: us.anthropic.claude-haiku-4-5-20251001-v1:0, price: [1.00, 5.00]}
+  claude-sonnet-4.6: {provider: bedrock, id: us.anthropic.claude-sonnet-4-6,           price: [3.00, 15.00]}
+
+# Which model each step uses. The sweep overrides these per experiment.
+roles:
+  extractor: gpt-oss-120b      # ladder winner, see DECISIONS.md
+  reconciler: claude-sonnet-4.6 # best cause accuracy on dev, see DECISIONS.md
+  memo_writer: claude-haiku-4.5
+  judge: gpt-oss-120b           # different family from reconciler + memo writer; calibrate vs human labels before trusting
+
+# How the reconcile step works (see RUNBOOK.md / EVALS.md):
+#   pipeline  code gathers evidence by keyword, one LLM call classifies the cause (the baseline)
+#   agent     a tool-using agent: fact_history to see which filing changed the number,
+#             search_filing (RAG over that filing) to find the explanation
+reconcile:
+  strategy: pipeline
+  agent_version: v1
+  # Easy lane: skip review only when triage confirms every link (cause fits the metric, numeric
+  # fingerprint, quote names it). Today that means stock splits. See steps/triage.py.
+  auto_approve: true
+
+# Reviewer-triggered research (research/agent.py): runs only when a reviewer asks for it on a
+# review card. One bounded investigation per candidate cause, fanned out by code. Live sources,
+# allowlisted: SEC EDGAR (filings + full-text search) and PwC Viewpoint accounting guides. Every
+# quote it reports is re-checked against its source.
+research:
+  enabled: true
+  model: claude-sonnet-4.6
+  max_rounds: 2
+
+# Retrieval for the agent's search_filing tool.
+embeddings:
+  id: amazon.titan-embed-text-v2:0
+  price: [0.02, 0.0]          # USD per 1M input tokens (AWS Pricing API)
+  max_rpm: 1200               # embeddings are ~free; don't throttle indexing like LLM calls
+retrieval:
+  chunk_size: 1500            # characters
+  chunk_overlap: 200
+  k: 5                        # passages returned per search
+  mode: vector                # vector | hybrid (vector + keyword, reciprocal rank fusion)
+
+# Prompt version per step (see DECISIONS.md). One source of truth for runner, API and CI gate.
+prompts:
+  extract: v2
+  reconcile: v2      # v3 adds an accounting rule: no-op for Sonnet, helps gpt-oss, hurts nova-lite
+
+bedrock:
+  region: us-east-1
+  profile_env: AWS_PROFILE        # the AWS profile with Bedrock access
+
+spend:
+  project_cap_usd: 30.0           # total across every run of this project (user budget 2026-10-17)
+  ledger: data/spend_ledger.json
+  # Optional account-wide ledger shared with other projects on the same AWS account, so the
+  # monthly cap sees all spend. Set SPEND_SHARED_LEDGER=/path/to/ledger.json in .env to enable.
+  shared_ledger: null
+  monthly_cap_usd: 100.0
+  max_rpm_per_model: 300

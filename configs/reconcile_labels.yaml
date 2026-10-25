@@ -1,0 +1,268 @@
+# Ground-truth causes for answer-key discrepancies. Every label cites the filing text that
+# supports it. A discrepancy we can't confirm from the text gets NO label (excluded from cause
+# accuracy) rather than a guess.
+#
+# Causes: stock_split | discontinued_operations | accounting_change | reclassification
+# Immaterial discrepancies (< 0.5% spread) are auto-resolved in code and not listed here.
+# anchors: verbatim phrases from the explaining passage; verified to appear in the filing(s)
+# where the number changed. The retrieval eval asks: did search return a passage containing one?
+
+GE:revenue:FY2021:
+  cause: discontinued_operations
+  evidence: '0000040545-24-000027: "On January 3, 2023, we completed the separation of the HealthCare business from GE through the spin-off of GE HealthCare Technologies Inc."'
+  anchors:
+  - separation of the HealthCare business
+  - GE HealthCare
+GE:revenue:FY2022:
+  cause: discontinued_operations
+  evidence: '0000040545-25-000015: GE Vernova spin-off (2024) reported as discontinued operations for all periods presented'
+  anchors:
+  - GE Vernova
+  - GE HealthCare
+GE:revenue:FY2023:
+  cause: discontinued_operations
+  evidence: '0000040545-26-000008: "Note 2 Discontinued Operations"; prior periods recast'
+  anchors:
+  - GE Vernova
+GE:cash:FY2022:
+  cause: discontinued_operations
+  evidence: '0000040545-24-000027: GE HealthCare assets reported in discontinued operations for all periods presented'
+  anchors:
+  - GE HealthCare
+GE:cash:FY2023:
+  cause: discontinued_operations
+  evidence: '0000040545-25-000015: GE Vernova assets reported in discontinued operations'
+  anchors:
+  - GE Vernova
+GE:long_term_debt:FY2022:
+  cause: discontinued_operations
+  evidence: '0000040545-24-000027: GE HealthCare liabilities (incl. its debt) moved to discontinued operations'
+  anchors:
+  - GE HealthCare
+GE:long_term_debt:FY2023:
+  cause: null
+GE:net_income:FY2021:
+  cause: accounting_change
+  evidence: '0000040545-24-000027: "On January 1, 2023, we adopted ASU No. 2018-12 ... Targeted Improvements to the Accounting for Long-Duration Contracts" (net income attributable to GE includes discontinued
+    operations, so the spin-off alone would not change it)'
+  anchors:
+  - 2018-12
+GE:net_income:FY2022:
+  cause: accounting_change
+  evidence: '0000040545-24-000027: ASU 2018-12 (LDTI) adoption; 225 -> 339 happened in this filing'
+  anchors:
+  - 2018-12
+GE:operating_cash_flow:FY2021:
+  cause: null
+NVDA:diluted_shares:FY2023:
+  cause: stock_split
+  evidence: '0001045810-25-000023: "In June 2024, we executed a ten-for-one stock split of our common stock."'
+  anchors:
+  - ten-for-one stock split
+NVDA:diluted_shares:FY2024:
+  cause: stock_split
+  evidence: '0001045810-26-000021: "In May 2024, we announced a ten-for-one stock split"'
+  anchors:
+  - ten-for-one stock split
+WMT:diluted_shares:FY2022:
+  cause: stock_split
+  evidence: '0000104169-24-000056: "...retroactively adjusted to reflect the stock split."'
+  anchors:
+  - stock split
+WMT:diluted_shares:FY2023:
+  cause: stock_split
+  evidence: '0000104169-25-000021: "On February 23, 2024, the Company effected a 3-for-1 forward split of its common stock"'
+  anchors:
+  - 3-for-1 forward split
+  - stock split
+PFE:revenue:FY2022:
+  cause: reclassification
+  evidence: '0000078003-25-000054: "...Royalty revenues as a separate line item within Total revenues ... Prior-period amounts have been recast to conform to the current presentation."'
+  anchors:
+  - Royalty revenues
+PFE:revenue:FY2023:
+  cause: reclassification
+  evidence: '0000078003-26-000026: "We have made certain reclassification adjustments to conform prior-period amounts to the current presentation"'
+  anchors:
+  - reclassification adjustments
+AMZN:diluted_shares:FY2020:
+  cause: stock_split
+  evidence: '0001018724-23-000004: "On May 27, 2022, we effected a 20-for-1 stock split of our common stock"'
+  anchors:
+  - 20-for-1 stock split
+AMZN:diluted_shares:FY2021:
+  cause: stock_split
+  evidence: '0001018724-23-000004: same 20-for-1 split'
+  anchors:
+  - 20-for-1 stock split
+CMG:diluted_shares:FY2022:
+  cause: stock_split
+  evidence: '0001058090-25-000014: "On June 26, 2024, we effected a 50-for-1 stock split of our common stock"'
+  anchors:
+  - 50-for-1 stock split
+CMG:diluted_shares:FY2023:
+  cause: stock_split
+  evidence: '0001058090-25-000014: same 50-for-1 split'
+  anchors:
+  - 50-for-1 stock split
+AVGO:diluted_shares:FY2022:
+  cause: stock_split
+  evidence: '0001730168-24-000139: "We completed a ten-for-one forward stock split of our common stock. All share ... amounts have been retroactively adjusted"'
+  anchors:
+  - ten-for-one forward stock split
+AVGO:diluted_shares:FY2023:
+  cause: stock_split
+  evidence: '0001730168-24-000139: same ten-for-one split'
+  anchors:
+  - ten-for-one forward stock split
+TSLA:diluted_shares:FY2020:
+  cause: stock_split
+  evidence: '0000950170-23-001409: "the three-for-one stock split in the form of a stock dividend in August 2022 (the 2022 Stock Split)"'
+  anchors:
+  - three-for-one stock split
+TSLA:diluted_shares:FY2021:
+  cause: stock_split
+  evidence: '0000950170-23-001409: same three-for-one split'
+  anchors:
+  - three-for-one stock split
+JNJ:revenue:FY2021:
+  cause: discontinued_operations
+  evidence: '0000200406-24-000013: "Kenvue IPO/separation and discontinued operations"'
+  anchors:
+  - Kenvue
+JNJ:revenue:FY2022:
+  cause: discontinued_operations
+  evidence: '0000200406-24-000013: Kenvue separation, prior years recast'
+  anchors:
+  - Kenvue
+JNJ:cash:FY2022:
+  cause: discontinued_operations
+  evidence: '0000200406-24-000013: Kenvue''s cash moved to discontinued operations'
+  anchors:
+  - Kenvue
+DHR:revenue:FY2021:
+  cause: discontinued_operations
+  evidence: '0000313616-24-000052: "On September 30, 2023 ... we completed the separation ... of our former Environmental & Applied Solutions business by distributing ... Veralto Corporation"'
+  anchors:
+  - Veralto
+DHR:revenue:FY2022:
+  cause: discontinued_operations
+  evidence: '0000313616-24-000052: Veralto separation'
+  anchors:
+  - Veralto
+DHR:operating_income:FY2021:
+  cause: discontinued_operations
+  evidence: '0000313616-24-000052: Veralto separation'
+  anchors:
+  - Veralto
+DHR:operating_income:FY2022:
+  cause: discontinued_operations
+  evidence: '0000313616-24-000052: Veralto separation'
+  anchors:
+  - Veralto
+MMM:revenue:FY2022:
+  cause: discontinued_operations
+  evidence: '0000066740-25-000006: "On April 1, 2024, 3M completed the previously announced separation of its Health Care business"'
+  anchors:
+  - Solventum
+  - Health Care business
+MMM:revenue:FY2023:
+  cause: discontinued_operations
+  evidence: '0000066740-25-000006: Solventum (Health Care) separation'
+  anchors:
+  - Solventum
+  - Health Care business
+MMM:operating_income:FY2022:
+  cause: discontinued_operations
+  evidence: '0000066740-25-000006: Solventum separation'
+  anchors:
+  - Solventum
+  - Health Care business
+MMM:operating_income:FY2023:
+  cause: discontinued_operations
+  evidence: '0000066740-25-000006: Solventum separation; the loss got BIGGER (-9,128 -> -10,689) because the removed business was profitable'
+  anchors:
+  - Solventum
+  - Health Care business
+
+# ---- Fresh split (added 2026-10-22, after every choice was frozen) -------------------------------
+# Life insurers that adopted ASU 2018-12 (LDTI) on 2023-01-01 with a 2021-01-01 transition date and
+# restated 2021-22 in the FY2023 10-K. Labels drafted from the filing text by the coding assistant
+# (each quote verified verbatim in the filing where the number changed), then spot-checked by the
+# author on 2026-10-24 against each company's own adoption table on sec.gov.
+# `verified_by` records how strong the evidence is, decided from the filing, not from how any model
+# did on the case:
+#   tie_out    the company's adoption table adds up: as first reported + effect of ASU 2018-12 =
+#              as reported now, for this figure and year
+#   narrative  the company says prior-year amounts were adjusted for ASU 2018-12 and names no other
+#              cause, but prints no table that ties this figure out
+# Results on the fresh split are reported on all labels and on the tie_out labels alone.
+# Revenue and cash-flow changes are left unlabelled: the text doesn't tie them to one cause, and
+# LDTI can't change cash. LNC is unlabelled throughout: it adopted LDTI AND restated 2021-22 for an
+# error (2022 Form 10-K/A), two causes at once, one of them outside our cause list.
+AFL:net_income:FY2021: &afl
+  cause: accounting_change
+  verified_by: narrative
+  verified_note: 'no income-statement adoption table; the FY2023 10-K says all relevant prior-year amounts were adjusted for ASU 2018-12 and explains the 2021 premium and benefit changes'
+  evidence: '0000004977-24-000053: "On January 1, 2023, the Company adopted Accounting Standards Update (ASU) 2018-12, Financial Services - Insurance: Targeted Improvements to the Accounting for Long-Duration Contracts (LDTI)."'
+  anchors:
+  - 2018-12
+AFL:net_income:FY2022: *afl
+AFL:revenue:FY2021:
+  cause: null
+AFL:revenue:FY2022:
+  cause: null
+GL:net_income:FY2021: &gl
+  cause: accounting_change
+  verified_by: tie_out
+  verified_note: 'net income: 739,704 + 154,682 = 894,386 (2022), 744,959 + 286,155 = 1,031,114 (2021); operating income (pre-tax total): 990,666 + 195,800 = 1,186,466, 864,969 + 362,221 = 1,227,190 ($ thousands)'
+  evidence: '0000320335-24-000006: "The Company adopted ASU 2018-12 on January 1, 2023 using the modified retrospective application as of the transition date of January 1, 2021." (The filing also notes an immaterial correction of an error in the transition amounts; LDTI is the cause of the restatement.)'
+  anchors:
+  - 2018-12
+GL:net_income:FY2022: *gl
+GL:operating_income:FY2021: *gl
+GL:operating_income:FY2022: *gl
+LNC:net_income:FY2021:
+  cause: null
+LNC:net_income:FY2022:
+  cause: null
+LNC:operating_cash_flow:FY2021:
+  cause: null
+LNC:operating_cash_flow:FY2022:
+  cause: null
+LNC:revenue:FY2021:
+  cause: null
+MET:net_income:FY2021: &met
+  cause: accounting_change
+  verified_by: tie_out
+  verified_note: '2,539 + 2,745 = 5,284 (2022), 6,554 + 301 = 6,855 (2021), net income attributable to MetLife ($ millions)'
+  evidence: '0001099219-24-000035: "The Company adopted ASU 2018-12, effective January 1, 2023 with a transition date of January 1, 2021"'
+  anchors:
+  - 2018-12
+MET:net_income:FY2022: *met
+MET:operating_cash_flow:FY2021:
+  cause: null
+MET:operating_cash_flow:FY2022:
+  cause: null
+MET:revenue:FY2021:
+  cause: null
+MET:revenue:FY2022:
+  cause: null
+PRU:net_income:FY2021: &pru
+  cause: accounting_change
+  verified_by: tie_out
+  verified_note: '(1,438) + (209) = (1,647) (2022), 7,724 + 1,144 = 8,868 (2021), net income attributable to Prudential ($ millions)'
+  evidence: '0001137774-24-000045: "Effective January 1, 2023, the Company adopted ASU 2018-12, Financial Services—Insurance (Topic 944): Targeted Improvements to the Accounting for Long-Duration Contracts."'
+  anchors:
+  - 2018-12
+PRU:net_income:FY2022: *pru
+PRU:revenue:FY2022:
+  cause: null
+UNM:net_income:FY2021: &unm
+  cause: accounting_change
+  verified_by: tie_out
+  verified_note: '1,314.2 + 93.0 = 1,407.2 (2022), 824.2 + 156.8 = 981.0 (2021), net income ($ millions)'
+  evidence: '0000005513-24-000015: "Prior financial information has been adjusted to reflect our modified retrospective adoption, effective January 1, 2023, of the Accounting Standards Update (ASU) 2018-12, related to targeted improvements to the accounting for long-duration contracts."'
+  anchors:
+  - 2018-12
+UNM:net_income:FY2022: *unm

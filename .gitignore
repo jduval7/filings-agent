@@ -1,0 +1,29 @@
+.venv/
+/data/
+__pycache__/
+.env
+*.pyc
+.pytest_cache/
+.coverage
+.langgraph_api/
+
+# review UI
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+
+# demo scenes' runs (rebuilt by `make demo`); demo/data is committed
+demo/state/
+
+# The submission video, its tooling and my demo notes: made locally, not part of the project.
+/DEMO.md
+/demo/video/
+/video.mk
+/scripts/build_video.py
+/scripts/langsmith_clip_targets.py
+/web/clips/
+/web/clips.config.ts
+/web/langsmith-clips/
+/web/langsmith.config.ts
+/web/.auth/

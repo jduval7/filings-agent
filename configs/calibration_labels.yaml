@@ -1,0 +1,91 @@
+# Your labels for judge calibration. For each item in data/calibration/LABEL_ME.md,
+# set each criterion to true (pass) or false (fail). Leave null to skip.
+# Rubric questions are in LABEL_ME.md. These labels are yours: commit them.
+memo-2f2ac3684d:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-3195ce124a:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-3e9c12b0c7:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-5285206d1c:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-566c50f507:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-77a0f2e8d7:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-b55cc52e97:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+memo-ed21fc5a23:
+  actionable: null
+  caveats_correct: null
+  comparable: null
+  faithful: null
+rec-0a12b578f1:
+  consistent: null
+  specific: null
+  supported: null
+rec-2b51217b88:
+  consistent: null
+  specific: null
+  supported: null
+rec-2b84b2967f:
+  consistent: null
+  specific: null
+  supported: null
+rec-2ec0a36e61:
+  consistent: null
+  specific: null
+  supported: null
+rec-36df222eb2:
+  consistent: null
+  specific: null
+  supported: null
+rec-44ccbabf44:
+  consistent: null
+  specific: null
+  supported: null
+rec-80fee08725:
+  consistent: null
+  specific: null
+  supported: null
+rec-8d76372b24:
+  consistent: null
+  specific: null
+  supported: null
+rec-a7ea98fa1f:
+  consistent: null
+  specific: null
+  supported: null
+rec-aaf114c906:
+  consistent: null
+  specific: null
+  supported: null
+rec-ca99e3084b:
+  consistent: null
+  specific: null
+  supported: null
+rec-d373e2c4b4:
+  consistent: null
+  specific: null
+  supported: null
