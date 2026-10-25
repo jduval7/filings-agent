@@ -436,7 +436,8 @@ reviewer notes would be deleted after a set period and kept out of shared datase
 | Results before and after | [Before and after](#6-how-i-know-it-works), [EVALS.md](EVALS.md#before-and-after) |
 | Failures, tradeoffs, open questions | [Where it falls short](#7-where-it-falls-short) |
 | How you'd evaluate it in production | [Checking it in production](#8-checking-it-in-production) |
-| Optional extras | judge calibration (built, labels pending), results by company, split, reason and lane, agent tool-call checks, tricky examples (prompt injection, the fresh companies), automatic checks on every trace, safeguards, live progress, Makefile and CI |
+| Optional extras | an online evaluation (an LLM judge LangSmith runs on published memos, with its own spend cap), judge calibration (built, labels pending), results by company, split, reason and lane, agent tool-call checks, tricky examples (prompt injection, the fresh companies), automatic checks on every trace, guardrails and personal-data handling, streaming progress (server-sent events), Makefile and CI |
+| Deep Agents | tried for research: the trace showed the model choosing which causes to check, so a code fan-out of one bounded agent per cause replaced it ([why](DECISIONS.md#2026-10-21-reviewer-triggered-research-deepagents-tried-code-fan-out-kept)) |
 
 ## 13. Other docs
 
