@@ -1,5 +1,7 @@
 # filings-agent
 
+![A pile of annual reports flows through a pipeline into a few checked evidence cards, reviewed by an analyst](docs/hero.jpg)
+
 ## 1. The problem
 
 Every public company files an annual report with the SEC, called a 10-K. Each 10-K shows this
