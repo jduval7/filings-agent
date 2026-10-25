@@ -41,14 +41,14 @@ never sees it.
 Built with LangGraph and LangSmith, with models on Amazon Bedrock. Python 3.12, FastAPI,
 pyright strict, 419 offline tests, and a React review screen for the person in the loop.
 
-> **Screen recording:** _link to be added_ · **Repository:** _link to be added_
+> **Screen recording:** _link to be added_ · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
 
 ## Quickstart
 
 You need [uv](https://docs.astral.sh/uv/) and Node 22 (or 20.19+). No credentials, no model calls:
 
 ```bash
-git clone REPO_URL && cd filings-agent
+git clone https://github.com/jduval7/filings-agent.git && cd filings-agent
 make demo        # then open http://localhost:8000
 ```
 
