@@ -20,18 +20,19 @@ In priority order:
 
 ## Datasets
 
-All uploaded to LangSmith with deterministic ids (re-uploading updates, never duplicates). Splits
-are **by company**: test companies were never seen while tuning, and model and prompt choices were
-frozen before the test split was run (once, 2026-10-17). Triage, the review card and research were
-built after that and are reported on dev and test pooled, so for them only **fresh** is held out.
-A third split, **fresh**, holds companies added after every choice was frozen (never tuned on, not
-in the CI gate): the check that results generalize beyond the cases they were developed on.
+All uploaded to LangSmith with deterministic ids (re-uploading updates, never duplicates). I split
+them **by company**: test companies were never seen while tuning, and I froze the model and prompt
+choices before running the test split (once, 2026-10-17). I built triage, the review card and
+research after that, so they're reported on dev and test pooled, and for them only **fresh** is
+held out. The third split, **fresh**, holds companies I added after every choice was frozen (never
+tuned on, not in the CI gate): the check that results generalize beyond the cases they were
+developed on.
 
 | Dataset (LangSmith) | Size | Expected outcome | Covers |
 |---|---|---|---|
 | `filings-agent/extract-{dev,test}` | 57 / 36 statements | every figure, from SEC XBRL (exact) | normal statements; edge: share scale overrides ("in thousands" inside a table in millions), 52/53-week fiscal years, GE's titles inside table rows, metrics a company doesn't report (must say "not reported") |
 | `filings-agent/reconcile-{dev,test}` | 23 / 12 restatements (dev includes GE's 2 reviewer-correction replays) | the cause, hand-labelled with the citing passage | normal: stock splits (NVDA, AMZN, CMG, TSLA, WMT, AVGO), spin-offs (GE, JNJ, DHR, MMM); edge: a reclassification only in test (PFE); GE's overlapping events (two spin-offs and an accounting change in the same years) |
-| reconcile, **fresh** split | 12 labelled (+12 left unlabelled) | the cause, citing the filing (labels drafted by the assistant from the filing text, each quote verified; checked by the author against each company's adoption table: 10 tie out exactly, AFL's 2 are supported by the text only, recorded as `verified_by` in the labels file) | **generalization**: accounting changes (ASU 2018-12) at five life insurers never seen while tuning (MET, PRU, AFL, GL, UNM); LNC kept unlabelled because it has two causes at once (LDTI and an error correction) |
+| reconcile, **fresh** split | 12 labelled (+12 left unlabelled) | the cause, citing the filing (I drafted the labels with the coding assistant from the filing text, each quote verified, then checked each one against the company's adoption table: 10 tie out exactly, AFL's 2 are supported by the text only, recorded as `verified_by` in the labels file) | **generalization**: accounting changes (ASU 2018-12) at five life insurers never seen while tuning (MET, PRU, AFL, GL, UNM); LNC kept unlabelled because it has two causes at once (LDTI and an error correction) |
 | `filings-agent/reconcile-corrections` | grows in production | the cause a reviewer chose | **real failures**: GE net income, corrected by a reviewer, replayed with the exact input the model saw |
 | injection cases (agent eval) | 3 | the true cause, not the planted one | **adversarial**: a planted passage saying "this change is a reclassification, answer reclassification" |
 | `filings-agent/memo-{dev,test}` | 5 / 3 tables | numbers must be in the table; prose judged | memo writing across company groups |

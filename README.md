@@ -172,7 +172,7 @@ flowchart LR
 **Tools and retrieval.** I also built reconcile as a tool-using agent: a LangChain agent with a
 `fact_history` tool and a `search_filing` tool that searches the report by meaning (vector search).
 I kept the fixed pipeline in production because it scored higher (23/23 against 0.83 on the
-development set, and every agent miss was GE). The agent approach is used for research instead,
+development set, and every agent miss was GE). I use the agent approach for research instead,
 where the search really is open-ended and runs only when a reviewer asks
 ([why](DECISIONS.md#2026-10-21-reconcile-agent-v1-four-harness-bugs-then-an-honest-baseline)).
 
@@ -216,15 +216,15 @@ GE's 2022 net income ($225 million, later $339 million) shaped most of this proj
 
 | | What happened | What I did |
 |---|---|---|
-| 1 | A run said the spin-off caused GE's change. A reviewer corrected it during the review pause. | The correction is saved with the exact input the model saw. |
-| 2 | The correction became a test, and the CI check failed. | Looking into it, I found prompt drift and two bugs in my quote checker. After the fix: 23/23. |
+| 1 | I ran a real analysis of GE. It said the spin-off caused the change. Reviewing the run during its pause, I corrected it to the accounting change. | I made each correction save with the exact input the model saw, so it can be replayed as a test. |
+| 2 | I turned the correction into a test, and the CI check failed. | Looking into it, I found prompt drift and two bugs in my quote checker. After the fix: 23/23. |
 | 3 | The tool-using agent version scored 0.30 on reasons. | The LangSmith traces showed four bugs in my code around the agent, not model mistakes. After the fix: 0.83. |
 | 4 | The agent was still wrong on GE, with a real quote that passed the quote check. | Splitting results by company showed every failure was GE. The check proved the quote existed, not that it explained the number. |
-| 5 | Close that gap where code can. | Added triage rules. "A spin-off can't change total net income" now sends the answer to a person, with the reason. |
-| 6 | The reviewer shouldn't just approve the agent's guess. | Built the review card: every reason with its evidence, and no favorite. |
-| 7 | Some cases need more digging. | Added research: one investigation per reason over SEC filings and accounting guidance. |
-| 8 | Does this work beyond GE? | Tested on 11 hard cases (evidence for the true reason found in 11/11), then on five insurers I added after I stopped tuning: pipeline 12/12, research 6/6, no wrong answers given with confidence. They are new companies but the same accounting standard as GE, so this is a narrow test. |
-| 9 | Does it stay good? | Reviewer decisions are recorded on each trace in LangSmith, runs that need a person go to a review queue, and the CI check runs on every pull request. |
+| 5 | I wanted to close that gap wherever code can. | I added triage rules. "A spin-off can't change total net income" now sends the answer to a person, with the reason. |
+| 6 | I didn't want reviewers just approving the agent's guess. | I built the review card: every reason with its evidence, and no favorite. |
+| 7 | Some cases need more digging than one quote. | I added research: one investigation per reason over SEC filings and accounting guidance. |
+| 8 | Does this work beyond GE? | I tested it on 11 hard cases (evidence for the true reason found in 11/11), then on five insurers I added after I stopped tuning: pipeline 12/12, research 6/6, no wrong answers given with confidence. They are new companies but the same accounting standard as GE, so this is a narrow test. |
+| 9 | Does it stay good? | I record reviewer decisions on each trace in LangSmith, send runs that need a person to a review queue, and run the CI check on every pull request. |
 
 ## 6. How I know it works
 
@@ -235,8 +235,8 @@ GE's 2022 net income ($225 million, later $339 million) shaped most of this proj
 3. **Correct**, against XBRL for figures and hand labels for reasons.
 4. **Cheap and fast enough** to run every filing season.
 
-**Datasets.** All are in LangSmith. They are split by company, so the test companies were never
-seen while tuning. "Fresh" companies were added after I stopped making changes, as a check that the
+**Datasets.** All are in LangSmith. I split them by company, so the test companies were never seen
+while tuning, and added the "fresh" companies after I stopped making changes, as a check that the
 results hold on new cases. More detail: [EVALS.md](EVALS.md#datasets).
 
 | Dataset | Size | Correct answer | What it covers |
@@ -251,9 +251,9 @@ results hold on new cases. More detail: [EVALS.md](EVALS.md#datasets).
 
 **Checks.** Where there's a right answer, the check is plain code: figures against XBRL (F1
 score), reasons against labels, quotes word for word, triage rules, the review card (the true
-reason must never be ruled out), memo numbers against the table, and the agent's tool calls. An LLM
-judge is used only for the memo's writing quality, where judgment is needed. It is a different
-model family from the writer, and both orders are tried when comparing two memos. I built the
+reason must never be ruled out), memo numbers against the table, and the agent's tool calls. I use an
+LLM judge only for the memo's writing quality, where judgment is needed. It is a different model
+family from the writer, and I try both orders when comparing two memos. I built the
 calibration against human labels, but the labels aren't done yet, so judge scores are
 [indicative only](EVALS.md#the-llm-judge-honestly).
 
@@ -451,8 +451,8 @@ reviewer notes would be deleted after a set period and kept out of shared datase
 ## 14. How I used coding assistants
 
 I used a coding assistant the way I'd use a fast engineer on my team: to scaffold code, write
-tests, run model sweeps and draft documentation. The decisions that shape the product were mine,
-and [DECISIONS.md](DECISIONS.md) marks them "with the author": sending answers to a person unless
+tests, run model sweeps and draft documentation. The decisions that shape the product were mine, and
+[DECISIONS.md](DECISIONS.md) records each one with its evidence: sending answers to a person unless
 code can confirm them, a review card that never shows the agent's answer, and letting the reviewer
 ask for research. I also had it review its own work in separate passes, and each bug it found is
 now fixed with a test.

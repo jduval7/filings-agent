@@ -424,7 +424,7 @@ followed 0/3, resisted 2/3. The pipeline strategy scores 23/23 on the same cases
 it, because the same model chooses the searches and the answer. The pipeline already separates
 these (evidence for every cause gathered up front, one decision), which is likely why it wins here.
 
-**Open, to decide with the author:** (a) split the agent into a looker that must cover every cause
+**Open:** (a) split the agent into a looker that must cover every cause
 and a decider that sees only the gathered evidence; (b) keep both strategies and report the
 comparison (the structured version wins on this task); (c) add a code check that the claimed cause
 *can* move this kind of metric; (d) treat "unknown" as success and headline the confident-wrong
@@ -441,7 +441,7 @@ each found somewhere in the statement, but not checked to be in the same row and
 the match is a substring ("234" matches inside "1,234"). The extraction gap is **not addressed
 here** (offline F1 0.995 against XBRL says it's rare, but it's a hole).
 
-**Decision (with the author).** Route answers by how well code can confirm them, instead of
+**Decision.** Route answers by how well code can confirm them, instead of
 reviewing everything or rejecting anything unproven:
 
 - **Easy lane (built):** `steps/triage.py`, plain code after every reconcile answer (pipeline and
@@ -453,7 +453,7 @@ reviewing everything or rejecting anything unproven:
   Anything not confirmed goes to review: "not covered" means "a human looks", never "probably
   fine". Switch: `reconcile.auto_approve` (on in config, off by default in code). The reviewer
   now sees the checks that failed.
-- **Hard lane:** see the review card entry below (the author's later decisions replace the
+- **Hard lane:** see the review card entry below (my later decisions replace the
   "propose an answer" plan first written here).
 
 **Results** (claude-sonnet-4.6, all from cached answers, $0):
@@ -472,7 +472,7 @@ reviewing everything or rejecting anything unproven:
   lane holds 11 split cases in total, so "0 wrong" is a small sample. dev n=23 includes the
   reviewer-correction replay of GE net income.
 
-**Open, for the author:** (a) easy lane is ~26-42% of material changes, splits only;
+**Open:** (a) easy lane is ~26-42% of material changes, splits only;
 spin-offs have no numeric fingerprint we compute, so they all go to review. A candidate (not
 built): confirm with the discontinued-operations amounts printed in the note. (b) Relax "quote names
 the ratio" to "the passage the quote came from names it" (would move AVGO FY2023 to the easy lane)?
@@ -486,7 +486,7 @@ people more likely to accept an AI answer whether it is right or wrong. The one 
 making the check cheaper than working the answer out. A real quote that made a wrong cause look
 verified (GE) is the "convincingly wrong" case in that literature.
 
-**Decisions (with the author):**
+**Decisions:**
 - **The agent never marks a favorite.** The card lists every candidate cause in a fixed order, with
   the sentences from the filing that mention it and whether it fits the numbers (*fits / possible /
   ruled out / no evidence*). The agent's own answer and its hand-picked quote are **not shown**:
@@ -497,7 +497,7 @@ verified (GE) is the "convincingly wrong" case in that literature.
 - **The reviewer picks the cause, or escalates.** The pick is published with the card's evidence
   for *that* cause. Picking differently from the hidden agent answer becomes a regression test as
   before. **Escalate** publishes the number now, with cause "unknown" and the reviewer's note.
-  (Waiting for escalated cases instead is a one-line change; the author hasn't chosen yet.)
+  (Waiting for escalated cases instead is a one-line change; I haven't chosen yet.)
 - Pure code from the evidence the pipeline already gathers (`steps/card.py`). No LLM call.
 
 **Result** (`filings-agent cards --eval`, all labelled cases, no LLM):
@@ -529,7 +529,7 @@ accuracy is unmeasured.
 
 ## 2026-10-21: Reviewer-triggered research: deepagents tried, code fan-out kept
 
-**Decision (with the author):** the reviewer can answer a card with **research** (optionally with a
+**Decision:** the reviewer can answer a card with **research** (optionally with a
 hint, e.g. "check for an 8-K"). Only then does research run, for that one case, so the cost lands
 on the cases a human judged hard. The card comes back with the findings; at most
 `research.max_rounds` (2) rounds per case, then decide or escalate.
@@ -574,7 +574,7 @@ reclassification and "other" investigators still argue the spin-off, and one not
 Vernova to the 2024 filing: the existence-vs-binding problem persists in the notes, which is why
 the card shows them as unverified.
 
-**Decided with the author (card display):**
+**Decided (card display):**
 - Quotes and sources first; the investigator's note is labelled "unverified reading" and collapsed.
 - At most 2 findings per cause, alternating for/against, with a count of the rest: a pile of
   findings for one cause would read as a favorite.
@@ -631,8 +631,8 @@ answer key found 24 material restatements. **12 are labelled accounting_change**
 AFL, GL, MET, PRU, UNM; GL operating income), each citing a passage verified verbatim in the filing
 where the number changed. 12 are left unlabelled: revenue and cash-flow changes the text doesn't tie
 to one cause (LDTI can't change cash), and all of LNC, which adopted LDTI **and** restated 2021-22
-for an error (2022 Form 10-K/A): two causes at once, one outside our cause list. Labels were drafted
-by the coding assistant from the filing text; to be spot-checked by the author (done 2026-10-24, see below). Dev and test datasets
+for an error (2022 Form 10-K/A): two causes at once, one outside our cause list. I drafted the labels
+with the coding assistant from the filing text, then checked each one myself (2026-10-24, see below). Dev and test datasets
 are byte-for-byte unchanged.
 
 | on the 12 fresh accounting-change cases | result |
@@ -777,11 +777,11 @@ tests of the same kind wouldn't have caught them; tests against reality would.
    explicit error, one SQL string annotated (table names from a fixed tuple).
 7. New: the API records each run's LangSmith trace id; the dashboard links "Open trace in LangSmith".
 
-## 2026-10-23: Independent review: four reviewers, ~40 findings, fixed with a test each
+## 2026-10-23: Independent review: four passes, ~40 findings, fixed with a test each
 
-**Why:** the sweeps kept finding bugs, so four independent reviewers (each with fresh context) read
-the code by area: graph/steps/storage, research/LLM/spend, API/UI, and evals/doc claims. Each
-finding below is fixed with a regression test that fails on the old code (the publish race was
+**Why:** the sweeps kept finding bugs, so I ran four independent code reviews with the coding
+assistant, each in a fresh context and each on one area: graph/steps/storage, research/LLM/spend,
+API/UI, and evals/doc claims. Each finding below is fixed with a regression test that fails on the old code (the publish race was
 checked: 3/3 failures before, 5/5 passes after).
 
 **Correctness (the guarantees the docs make):**
@@ -837,7 +837,7 @@ project's remaining budget, so it's flagged in EVALS.md (known failure 9) for th
   14% no evidence / 59% open (not "about half"); research's wrong causes also get supporting
   findings (0.9 per hard case, 0.3 per fresh case); easy lane 0 of 11 (95% upper bound ~27%);
   "anchor hit", not "retrieval hit"; the injection eval covers only agent v1; the fresh split is new
-  companies but GE's standard, one class, labels drafted by the assistant and not yet spot-checked (done 2026-10-24)
+  companies but GE's standard, one class, labels drafted with the assistant, which I checked on 2026-10-24
   (the labels file said they were); the test split was run once for model and prompt choices, but
   triage, the card and research came later; counts (9 spin-offs, 10 companies, five insurers).
 
@@ -860,7 +860,7 @@ filings compared) with `resolutions` as a view derived from it. Precedence: a hu
 escalation, which beats an automatic answer; among equals, the newest. An escalation after a pick
 is shown (`later_escalations`), not applied: only a human pick supersedes a human pick. The case
 is the discrepancy plus its filing set. Existing ledgers are migrated on open (their rows become
-history; what they overwrote is gone). Still open, for the author: waiting on escalations instead
+history; what they overwrote is gone). Still open: waiting on escalations instead
 of publishing them (the 2026-10-21 card entry). Today an escalation is resolved by deciding the case
 in a new run, which is now safe.
 
@@ -912,8 +912,8 @@ ownership isn't needed for one review team.
 
 ## 2026-10-24: Fresh labels checked against the companies' own tables
 
-**Why:** the 12 fresh labels (accounting change, ASU 2018-12, at five insurers) were drafted by the
-coding assistant and marked as not yet checked by the author.
+**Why:** the 12 fresh labels (accounting change, ASU 2018-12, at five insurers) were drafted with the
+coding assistant, and I hadn't checked them yet.
 
 **What the check found.** Each insurer that adopted the standard printed a table in its FY2023 10-K
 with the amount as first reported, the effect of the standard, and the amount as reported now. For
@@ -923,7 +923,7 @@ net income, for 2021 and 2022. Aflac prints no such table for its income stateme
 "All relevant prior-year amounts have been adjusted for the adoption of ASU 2018-12" and explains
 which 2021 lines moved, and it names no other cause.
 
-**Decision (with the author): keep Aflac's 2 labels, record how each label was verified, report
+**Decision: keep Aflac's 2 labels, record how each label was verified, report
 both ways.** `verified_by: tie_out | narrative` (with a note of the figures) is in
 `configs/reconcile_labels.yaml`, and the receipt reports the fresh split on all 12 labels and on the
 10 that tie out: pipeline 12/12 and 10/10, agent 10/12 and 9/10, research 6/6 and 5/5. The criterion

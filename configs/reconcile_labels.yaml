@@ -187,9 +187,9 @@ MMM:operating_income:FY2023:
 
 # ---- Fresh split (added 2026-10-22, after every choice was frozen) -------------------------------
 # Life insurers that adopted ASU 2018-12 (LDTI) on 2023-01-01 with a 2021-01-01 transition date and
-# restated 2021-22 in the FY2023 10-K. Labels drafted from the filing text by the coding assistant
-# (each quote verified verbatim in the filing where the number changed), then spot-checked by the
-# author on 2026-10-24 against each company's own adoption table on sec.gov.
+# restated 2021-22 in the FY2023 10-K. I drafted the labels from the filing text with the coding
+# assistant (each quote verified verbatim in the filing where the number changed), then checked each
+# one on 2026-10-24 against the company's own adoption table on sec.gov.
 # `verified_by` records how strong the evidence is, decided from the filing, not from how any model
 # did on the case:
 #   tie_out    the company's adoption table adds up: as first reported + effect of ASU 2018-12 =
