@@ -39,7 +39,7 @@ Every figure is graded against XBRL, the SEC's machine-readable copy of the same
 never sees it.
 
 Built with LangGraph and LangSmith, with models on Amazon Bedrock. Python 3.12, FastAPI,
-pyright strict, 421 offline tests, and a React review screen for the person in the loop.
+pyright strict, 428 offline tests, and a React review screen for the person in the loop.
 
 > **Screen recording:** _link to be added_ · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
 
@@ -174,6 +174,22 @@ I kept the fixed pipeline in production because it scored higher (23/23 against 
 development set, and every agent miss was GE). The agent approach is used for research instead,
 where the search really is open-ended and runs only when a reviewer asks
 ([why](DECISIONS.md#2026-10-21-reconcile-agent-v1-four-harness-bugs-then-an-honest-baseline)).
+
+**Framework patterns.** Where LangGraph or LangChain documents a way to do something, the code
+uses it instead of a hand-made version:
+
+- The review pauses with `interrupt()`. An invalid answer is asked again by routing back to the
+  review step through a conditional edge, as LangGraph's interrupts guide recommends, never by
+  looping around `interrupt()` inside the node.
+- The agents retry a throttled model call with LangChain's `ModelRetryMiddleware`, and research
+  retries a briefly unavailable source with `ToolRetryMiddleware`, so one throttle doesn't fail a
+  whole investigation. They share one definition of a transient error with the graph's
+  `RetryPolicy` (`llm/transient.py`), and every attempt goes through the spend guard.
+- The agents' cost is bounded with `ModelCallLimitMiddleware` and `ToolCallLimitMiddleware`, and
+  their answers use `ToolStrategy` structured output, which behaves the same on every model.
+- The research investigations run in parallel on LangChain's `ContextThreadPoolExecutor`, which
+  carries the tracing context into each thread, so all of them nest under the research step in
+  LangSmith.
 
 ### The review card
 
@@ -355,7 +371,7 @@ To run it on live data:
 make setup
 cp .env.example .env    # SEC_USER_AGENT, LANGSMITH_API_KEY, LANGSMITH_TRACING=true, AWS_PROFILE (Bedrock)
 make data               # download 95 reports, build the answer key and eval datasets (cached)
-make check              # ruff + pyright strict + 421 tests (no network, no LLM)
+make check              # ruff + pyright strict + 428 tests (no network, no LLM)
 
 uv run filings-agent run --tickers GE,NVDA                  # runs, then pauses for review
 uv run filings-agent cards --thread <id>                    # the review cards it's waiting on

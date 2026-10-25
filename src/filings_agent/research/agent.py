@@ -39,6 +39,7 @@ from langchain.agents import create_agent
 from langchain.agents.middleware import (
     ModelCallLimitMiddleware,
     ToolCallLimitMiddleware,
+    ToolRetryMiddleware,
     wrap_tool_call,
 )
 from langchain.agents.middleware.types import ToolCallRequest
@@ -53,6 +54,7 @@ from pydantic import BaseModel, Field
 from filings_agent.config import ModelSpec
 from filings_agent.domain import Discrepancy
 from filings_agent.llm.cache import StepCache
+from filings_agent.llm.transient import model_retry
 from filings_agent.research.findings import ResearchResult, VerifiedFinding
 from filings_agent.research.sources import SOURCES_VERSION, Fetcher
 from filings_agent.research.tools import TOOLS, ResearchContext
@@ -156,6 +158,24 @@ def tool_errors_unless_transient(
         )
 
 
+def investigator_middleware(retry_delay: float = 1.0) -> list[Any]:
+    """The research agents' middleware, outermost first."""
+    return [
+        model_retry(retry_delay),  # a throttle retries that one call, not the whole investigation
+        # A source that's briefly down or throttling (429/5xx, a dropped connection) is retried
+        # with backoff before the investigation gives up on it. A bad request (404, a wrong URL)
+        # isn't retried: tool_errors_unless_transient turns it into a message for the model, and
+        # passes outages through, so this retries them in either order. Still down after the
+        # retries: raised, so the investigation fails visibly and isn't cached.
+        ToolRetryMiddleware(
+            max_retries=2, retry_on=transient, on_failure="error", initial_delay=retry_delay
+        ),
+        ModelCallLimitMiddleware(run_limit=MODEL_CAP, exit_behavior="end"),
+        ToolCallLimitMiddleware(run_limit=TOOL_BUDGET, exit_behavior="continue"),
+        tool_errors_unless_transient,
+    ]
+
+
 def build_investigator(model: BaseChatModel, cause: str) -> Any:
     """One bounded investigation. After TOOL_BUDGET tool calls further calls are refused, so the
     model has to write its report; MODEL_CAP is the hard stop."""
@@ -165,11 +185,7 @@ def build_investigator(model: BaseChatModel, cause: str) -> Any:
         system_prompt=PROMPT.format(brief=CAUSE_BRIEFS[cause], budget=TOOL_BUDGET),
         response_format=ToolStrategy(CauseReport, handle_errors=True),
         context_schema=ResearchContext,
-        middleware=[
-            ModelCallLimitMiddleware(run_limit=MODEL_CAP, exit_behavior="end"),
-            ToolCallLimitMiddleware(run_limit=TOOL_BUDGET, exit_behavior="continue"),
-            tool_errors_unless_transient,
-        ],
+        middleware=investigator_middleware(),
         name=f"investigate_{cause}",
     )
 

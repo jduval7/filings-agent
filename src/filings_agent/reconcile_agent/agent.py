@@ -12,7 +12,8 @@ Harness (per the LangChain docs, "agent = model + harness"):
   tools       fact_history (where did it change?) and search_filing (RAG: why?)
   context     ReconcileContext, passed at invoke time, read by tools via ToolRuntime
   output      response_format=AgentAnswer (structured: cause, explanation, exact quote)
-  middleware  model/tool call limits (bounded cost), tool errors -> messages the model can act on
+  middleware  retry a throttled model call (LangChain ModelRetryMiddleware), model/tool call
+              limits (bounded cost), tool errors -> messages the model can act on
   after       code verifies the quote is in a passage the agent actually retrieved, else the
               answer is downgraded to "unknown" and goes to a human (same rule as the pipeline)
 
@@ -45,6 +46,7 @@ from pydantic import BaseModel, Field
 from filings_agent.config import ModelSpec
 from filings_agent.domain import FilingRef
 from filings_agent.llm.cache import StepCache
+from filings_agent.llm.transient import model_retry
 from filings_agent.reconcile_agent.retrieval import FilingIndex, Passage
 from filings_agent.reconcile_agent.tools import TOOLS, ReconcileContext
 from filings_agent.steps.extract import MODEL_FAILURE_CODES, Usage
@@ -126,6 +128,7 @@ def build_reconcile_agent(model: BaseChatModel, version: str = "v1") -> Any:
         response_format=ToolStrategy(AgentAnswer, handle_errors=True),
         context_schema=ReconcileContext,
         middleware=[
+            model_retry(),  # a throttle retries that one call, not the whole agent run
             ModelCallLimitMiddleware(run_limit=8, exit_behavior="end"),
             ToolCallLimitMiddleware(run_limit=6, exit_behavior="continue"),
             tool_errors_to_messages,

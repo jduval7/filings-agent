@@ -271,3 +271,60 @@ def test_research_finds_the_cik_of_reconcile_only_companies(cfg: Any) -> None:
     r = make_researcher(cfg)
     assert r._cik_of("GL") == 320335  # pyright: ignore[reportPrivateUsage]
     assert r._cik_of("NOPE") is None  # pyright: ignore[reportPrivateUsage]
+
+
+def _tool_agent(fetch: Any) -> Any:
+    """A minimal agent with the research middleware: the model calls `fetch` once, then answers."""
+    from langchain.agents import create_agent  # pyright: ignore[reportUnknownVariableType]
+    from langchain_core.messages import AIMessage
+    from langchain_core.tools import tool
+
+    from filings_agent.research.agent import investigator_middleware
+
+    @tool
+    def read_page(url: str) -> str:
+        """Read a page."""
+        return fetch(url)
+
+    call = AIMessage("", tool_calls=[{"name": "read_page", "args": {"url": SEC_DOC}, "id": "t1"}])
+    model = ToolFake(messages=iter([call, AIMessage("done")]))
+    return create_agent(model=model, tools=[read_page], middleware=investigator_middleware(0.0))
+
+
+def _http_error(status: int) -> httpx.HTTPStatusError:
+    req = httpx.Request("GET", SEC_DOC)
+    return httpx.HTTPStatusError("x", request=req, response=httpx.Response(status, request=req))
+
+
+def test_a_briefly_unavailable_source_is_retried_before_the_investigation_gives_up() -> None:
+    attempts: list[int] = []
+
+    def fetch(url: str) -> str:
+        attempts.append(1)
+        if len(attempts) <= 2:
+            raise _http_error(503)
+        return "the page"
+
+    out = _tool_agent(fetch).invoke({"messages": [("user", "go")]})
+    tool_reply = next(m for m in out["messages"] if isinstance(m, ToolMessage))
+    assert tool_reply.content == "the page" and len(attempts) == 3
+
+
+def test_a_source_that_stays_down_fails_the_investigation_visibly() -> None:
+    def fetch(url: str) -> str:
+        raise _http_error(503)
+
+    with pytest.raises(httpx.HTTPStatusError):  # raised, so it isn't cached as "no evidence"
+        _tool_agent(fetch).invoke({"messages": [("user", "go")]})
+
+
+def test_a_bad_request_still_goes_back_to_the_model_as_a_message() -> None:
+    attempts: list[int] = []
+
+    def fetch(url: str) -> str:
+        attempts.append(1)
+        raise _http_error(404)
+
+    out = _tool_agent(fetch).invoke({"messages": [("user", "go")]})
+    tool_reply = next(m for m in out["messages"] if isinstance(m, ToolMessage))
+    assert "Tool error" in str(tool_reply.content) and len(attempts) == 1  # not retried

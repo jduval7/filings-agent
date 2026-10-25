@@ -28,8 +28,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Any, Protocol, cast
 
-from botocore.exceptions import ClientError, HTTPClientError
-from botocore.exceptions import ConnectionError as BotoConnectionError
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.config import get_config, get_stream_writer
 from langgraph.graph import END, START, StateGraph
@@ -48,6 +46,8 @@ from filings_agent.graph.state import (
     ResearchInput,
     ResearchRequest,
 )
+from filings_agent.llm.transient import TRANSIENT_CODES as TRANSIENT_CODES  # re-exported
+from filings_agent.llm.transient import is_transient as is_transient  # re-exported
 from filings_agent.research.findings import ResearchResult
 from filings_agent.sec.gold import find_discrepancies
 from filings_agent.sec.sections import locate_statements
@@ -70,17 +70,6 @@ from filings_agent.storage.ledger import Correction, Decided, Ledger, filing_set
 # or its steps changes what a run would publish, so the same request starts a new analysis
 # instead of replaying one made by the old code.
 GRAPH_VERSION = 1
-
-TRANSIENT_CODES = frozenset(
-    {
-        "ThrottlingException",
-        "ServiceUnavailableException",
-        "InternalServerException",
-        "ModelNotReadyException",
-        "ModelTimeoutException",
-    }
-)
-
 
 class Researching(Protocol):
     def research(self, task: ReconcileTask, hint: str, round_: int) -> ResearchResult: ...
@@ -117,16 +106,6 @@ def _deps(runtime: Runtime[Deps]) -> Deps:
     if _default_deps is None:
         raise RuntimeError("no Deps in the runtime context and no default_deps configured")
     return _default_deps()
-
-
-def is_transient(exc: BaseException) -> bool:
-    """Retry throttling and outages; never retry the model's own bad output or a spend cap."""
-    if isinstance(exc, ClientError):
-        return exc.response.get("Error", {}).get("Code", "") in TRANSIENT_CODES
-    # botocore's network errors (read timeout, connect timeout, endpoint unreachable, connection
-    # closed) are not the builtin TimeoutError/ConnectionError, so they used to count as bad model
-    # output and fail the branch; botocore's own one retry hid it. It now makes no retries.
-    return isinstance(exc, (TimeoutError, ConnectionError, HTTPClientError, BotoConnectionError))
 
 
 # ---- nodes ------------------------------------------------------------------------------------
