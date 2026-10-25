@@ -41,7 +41,7 @@ never sees it.
 Built with LangGraph and LangSmith, with models on Amazon Bedrock. Python 3.12, FastAPI,
 pyright strict, 428 offline tests, and a React review screen for the person in the loop.
 
-> **Screen recording:** _link to be added_ · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
+> **Screen recording:** [youtu.be/bhW4SXFPHNU](https://youtu.be/bhW4SXFPHNU) · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
 
 ## Quickstart
 
