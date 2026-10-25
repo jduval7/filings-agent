@@ -30,7 +30,6 @@ from __future__ import annotations
 import re
 import time
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 from typing import Any, Literal, cast
 
@@ -47,6 +46,7 @@ from langchain.agents.structured_output import StructuredOutputError, ToolStrate
 from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.runnables.config import ContextThreadPoolExecutor
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
@@ -342,7 +342,10 @@ class Researcher:
         def one(cause: str) -> tuple[dict[str, Any] | None, str | None, list[str]]:
             return self._investigate(cause, task, hint, usage_cb)
 
-        with ThreadPoolExecutor(len(CAUSE_BRIEFS)) as pool:
+        # ContextThreadPoolExecutor, not the stdlib one: it copies contextvars into each thread,
+        # which is how LangChain/LangSmith know the current parent run. With the plain pool every
+        # investigation was traced as its own root trace instead of under the research step.
+        with ContextThreadPoolExecutor(len(CAUSE_BRIEFS)) as pool:
             outcomes = dict(zip(CAUSE_BRIEFS, pool.map(one, CAUSE_BRIEFS), strict=True))
         totals = list(usage_cb.usage_metadata.values())
         return {

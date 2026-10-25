@@ -39,7 +39,7 @@ Every figure is graded against XBRL, the SEC's machine-readable copy of the same
 never sees it.
 
 Built with LangGraph and LangSmith, with models on Amazon Bedrock. Python 3.12, FastAPI,
-pyright strict, 420 offline tests, and a React review screen for the person in the loop.
+pyright strict, 421 offline tests, and a React review screen for the person in the loop.
 
 > **Screen recording:** _link to be added_ · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
 
@@ -355,7 +355,7 @@ To run it on live data:
 make setup
 cp .env.example .env    # SEC_USER_AGENT, LANGSMITH_API_KEY, LANGSMITH_TRACING=true, AWS_PROFILE (Bedrock)
 make data               # download 95 reports, build the answer key and eval datasets (cached)
-make check              # ruff + pyright strict + 420 tests (no network, no LLM)
+make check              # ruff + pyright strict + 421 tests (no network, no LLM)
 
 uv run filings-agent run --tickers GE,NVDA                  # runs, then pauses for review
 uv run filings-agent cards --thread <id>                    # the review cards it's waiting on

@@ -88,6 +88,36 @@ def test_every_cause_is_investigated_and_one_failure_does_not_sink_the_rest(
     assert len(calls) == 2 * len(CAUSE_BRIEFS)
 
 
+def test_investigations_run_in_the_callers_context_so_traces_nest(tmp_path: Path) -> None:
+    # LangChain and LangSmith find the parent run through contextvars. A plain ThreadPoolExecutor
+    # doesn't copy them, so every investigation was traced as its own root trace (seen in
+    # LangSmith: parent none) instead of under the research step.
+    from contextvars import ContextVar
+
+    from filings_agent.config import ModelSpec
+    from filings_agent.llm.cache import StepCache
+    from filings_agent.research.agent import Researcher
+
+    parent: ContextVar[str] = ContextVar("parent", default="none")
+    seen: list[str] = []
+
+    class Recording(FakeInvestigation):
+        def invoke(self, inp: Any, config: Any = None, context: Any = None) -> dict[str, Any]:
+            seen.append(parent.get())
+            return super().invoke(inp, config, context)
+
+    spec = ModelSpec(provider="bedrock", id="m", price=(3.0, 15.0))
+    fake = FakeFetcher({SEC_DOC: "On January 1, 2023, we adopted ASU No. 2018-12."})
+    r = Researcher(
+        "m", spec, ToolFake(messages=iter([])), StepCache(tmp_path), fake, cik_one, lambda a: ""
+    )
+    calls: list[str] = []
+    r._investigators = {c: Recording(c, calls) for c in CAUSE_BRIEFS}  # pyright: ignore[reportPrivateUsage]
+    parent.set("research-step")
+    r.research(ReconcileTask(GE_NET_INCOME.id, GE_NET_INCOME, GE_EVIDENCE), "", 1)
+    assert seen == ["research-step"] * len(CAUSE_BRIEFS)
+
+
 def test_reports_have_no_place_for_a_favorite() -> None:
     assert set(CauseReport.model_fields) == {"findings", "looked_at", "open_questions"}
     assert "most_likely" not in Finding.model_fields
