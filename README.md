@@ -145,14 +145,15 @@ Each design choice answers one of the difficulties above:
 flowchart LR
     P[plan<br/>code finds the 3 statements<br/>in each 10-K] -->|one branch<br/>per statement| X[extract<br/>model reads,<br/>code checks]
     X --> F[find changes<br/>code: same figure,<br/>different value?]
-    F -->|one branch<br/>per change over 0.5%| R[reconcile<br/>find evidence, model picks<br/>a reason + quote, code checks]
-    F -->|under 0.5%| V
+    F -->|one branch per change<br/>of 0.5% or more| R[reconcile<br/>find evidence, model picks<br/>a reason + quote, code checks]
+    F -->|under 0.5%:<br/>accepted automatically| M
     R --> T{triage<br/>code: can this reason<br/>explain this change?}
-    T -->|confirmed: splits| M
+    T -->|confirmed by code:<br/>stock splits| M
     T -->|everything else| V[review<br/>a person decides<br/>from a review card]
     V -->|research| S[research<br/>one investigation per reason,<br/>SEC + accounting guidance]
     S --> V
-    V --> M[memo<br/>numbers from code,<br/>text from the model, checked]
+    V -->|answer refused:<br/>asked again| V
+    V -->|every change decided| M[memo<br/>numbers from code,<br/>text from the model, checked]
     M --> U[(publish<br/>once)]
 ```
 
@@ -262,7 +263,7 @@ calibration against human labels, but the labels aren't done yet, so judge score
 |---|---|---|
 | Extraction (gpt-oss-120b) | F1 **0.998** on held-out test companies | my first version, one call per report: F1 0.40 |
 | Reconcile (claude-sonnet-4.6, pipeline) | **12/12** test, 23/23 dev | includes a reason never seen while tuning |
-| Changes code approves alone | 26% dev / 42% test of material changes skip review, **0 wrong** | "material" means a change over 0.5%. Stock splits only, by design. With 0 of 11 auto-approved wrong, the real error rate could still be as high as 27% (95% confidence) |
+| Changes code approves alone | 26% dev / 42% test of material changes skip review, **0 wrong** | "material" means a change of 0.5% or more. Stock splits only, by design. With 0 of 11 auto-approved wrong, the real error rate could still be as high as 27% (95% confidence) |
 | Review card | true cause never ruled out (33/33); of all candidate causes shown, 27% ruled out by code, 14% no evidence, 59% left open | measured by code, no model |
 | Research (on request) | true cause gets verified evidence on **17/17** hard cases (11 + 6 fresh); about $0.70 and 25 seconds per case | each investigation looks for its own reason, so wrong reasons get supporting quotes too: 0.9 per hard case, 0.3 per fresh case. Research adds evidence; the person decides |
 | New companies (fresh) | 12 accounting changes at 5 insurers never seen while tuning: pipeline **12/12**, agent 0 confident-wrong, card never rules out the true cause | nothing retuned, and all 12 are the same standard as GE's. I checked each label against the company's own adoption table: 10 add up exactly, and Aflac's 2 are supported by the company's text but it prints no table. On the 10 that add up: pipeline 10/10, agent 9/10, research 5/5 |
