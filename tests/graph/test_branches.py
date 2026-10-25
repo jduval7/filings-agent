@@ -76,6 +76,30 @@ def test_incomplete_review_is_rejected_not_treated_as_approval() -> None:
     )
 
 
+def test_an_invalid_review_goes_back_through_a_conditional_edge_not_a_loop() -> None:
+    # The LangGraph docs: no `while True` validation loops around interrupt(); route back with a
+    # conditional edge. So a refused answer ends the review step, and a new review step (one
+    # interrupt, showing the problems) is what's waiting.
+    from tests.support.graph_doubles import FakeReconciler
+
+    graph = build_graph(InMemorySaver())
+    deps = Deps(TwoFilingStore(), RestatingExtractor(), METRICS, reconciler=FakeReconciler())
+    graph.invoke({"tickers": ["AAA"]}, CFG, context=deps)
+    first = graph.get_state(CFG)
+    graph.invoke(Command(resume={"AAA:revenue:FY2023": {"action": "approve"}}), CFG, context=deps)
+    again = graph.get_state(CFG)
+    assert again.next == ("review",)
+    assert first.metadata and again.metadata
+    assert again.metadata.get("step", 0) > first.metadata.get("step", 0)  # a new step, not a loop
+    assert "unknown action" in again.values["review_problems"]["AAA:revenue:FY2023"]
+    (task,) = again.tasks
+    assert len(task.interrupts) == 1
+    assert "unknown action" in task.interrupts[0].value["problems"]["AAA:revenue:FY2023"]
+
+    graph.invoke(Command(resume={"AAA:revenue:FY2023": {"action": "escalate"}}), CFG, context=deps)
+    assert graph.get_state(CFG).values["review_problems"] == {}  # a valid answer clears them
+
+
 def test_no_ledger_means_publish_is_a_no_op() -> None:
     deps = Deps(TwoFilingStore(), RestatingExtractor(), METRICS)  # no ledger, no memo writer
     out = _invoke(deps, {"tickers": ["AAA"]})

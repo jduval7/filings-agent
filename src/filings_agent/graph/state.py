@@ -38,6 +38,9 @@ class AnalysisState(TypedDict, total=False):
     reconcile_usage: Annotated[dict[str, Usage], merge]
     # human review + publish
     decisions: Annotated[dict[str, Decision], merge]  # discrepancy_id -> human decision
+    # why the last review answer was refused (discrepancy_id -> reason); replaced, not merged, so a
+    # valid answer clears it. Non-empty: after_review routes back to review, which asks again.
+    review_problems: dict[str, str]
     # reviewer-triggered research, keyed "<discrepancy_id>#r<round>" (a round runs once)
     research_requests: Annotated[dict[str, ResearchRequest], merge]
     research: Annotated[dict[str, ResearchResult], merge]

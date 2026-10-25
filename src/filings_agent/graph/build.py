@@ -339,15 +339,16 @@ def review(state: AnalysisState, runtime: Runtime[Deps]) -> dict[str, Any]:
             for k in sorted(pending)
         ],
     }
-    # An invalid answer is asked again, with the reasons, instead of raising: LangGraph keeps a
-    # resume value, so raising after interrupt() replayed the same bad answer on every later
-    # resume and locked the run (found by review). Each loop turn consumes the next resume value.
-    problems: dict[str, str] = {}
-    while True:
-        answer = interrupt({**payload, "problems": problems} if problems else payload)
-        problems = review_problems(answer, set(pending), rounds_left)
-        if not problems:
-            break
+    # One interrupt() per pass through this node. An invalid answer isn't raised (LangGraph keeps
+    # the resume value, so raising replayed the same bad answer on every later resume and locked
+    # the run, found by review) and isn't re-asked in a loop here (the LangGraph docs: no
+    # `while True` validation loops around interrupt(), use a conditional edge). The problems go
+    # into state and `after_review` routes back to this node, which asks again showing them.
+    asked = state.get("review_problems") or {}
+    answer = interrupt({**payload, "problems": asked} if asked else payload)
+    problems = review_problems(answer, set(pending), rounds_left)
+    if problems:
+        return {"review_problems": problems}
     decisions = cast(dict[str, Decision], answer)
     research = {k for k in pending if decisions[k]["action"] == "research"}
     requests = {
@@ -359,12 +360,16 @@ def review(state: AnalysisState, runtime: Runtime[Deps]) -> dict[str, Any]:
     return {
         "decisions": {k: decisions[k] for k in pending if k not in research},
         "research_requests": requests,
+        "review_problems": {},
     }
 
 
 def after_review(state: AnalysisState) -> list[Send] | str:
-    """Requested research rounds that haven't run yet go to the research agent; then the cards
-    come back to the reviewer. Otherwise on to the memo."""
+    """An invalid answer goes back to review, which asks again with the problems. Requested
+    research rounds that haven't run yet go to the research agent; then the cards come back to
+    the reviewer. Otherwise on to the memo."""
+    if state.get("review_problems"):
+        return "review"
     tasks = {t.discrepancy_id: t for t in state.get("reconcile_tasks", [])}
     done = state.get("research", {})
     todo = [
@@ -560,7 +565,7 @@ def build_graph(
     g.add_edge("extract", "find_discrepancies")
     g.add_conditional_edges("find_discrepancies", fan_out_reconcile, ["reconcile", "review"])
     g.add_edge("reconcile", "review")
-    g.add_conditional_edges("review", after_review, ["research", "memo"])
+    g.add_conditional_edges("review", after_review, ["review", "research", "memo"])
     g.add_edge("research", "review")
     g.add_edge("memo", "publish")
     g.add_edge("publish", END)
