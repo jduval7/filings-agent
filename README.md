@@ -212,6 +212,34 @@ Decide: pick the cause (accept / use_original), escalate, or research further.
 The reasons are always in the same order, and only code rules mark one as ruled out.
 `uv run filings-agent cards --case GE:net_income:FY2022` prints this card.
 
+### What I deliberately left out
+
+- **A tool-using agent for the core step.** I built one and measured it: 0.83 against the
+  pipeline's 23/23. It does research instead, where the steps can't be planned
+  ([why](DECISIONS.md#2026-10-21-reconcile-agent-v1-four-harness-bugs-then-an-honest-baseline)).
+- **Deep Agents for research.** The trace showed the model choosing which causes to check.
+  Coverage is the point, so code fans out one bounded agent per cause
+  ([why](DECISIONS.md#2026-10-21-reviewer-triggered-research-deepagents-tried-code-fan-out-kept)).
+- **Auto-approving anything but stock splits.** Only a split leaves a fingerprint code can confirm
+  (an exact ratio). Everything else goes to a person
+  ([why](DECISIONS.md#2026-10-21-triage-an-easy-lane-now-a-hard-lane-planned)).
+- **More accounting rules.** Three exist, each citing its source. More need an accountant, not me
+  guessing ([why](DECISIONS.md#2026-10-23-shoring-up-before-submission-cited-rules-ci-on-a-fresh-clone-guardrails)).
+- **Hybrid retrieval.** Retrieval wasn't where the agent failed: by a loose measure it reached the
+  right passage on every dev case
+  ([why](DECISIONS.md#2026-10-21-reconcile-agent-v1-four-harness-bugs-then-an-honest-baseline)).
+- **A prompt rule for GE.** "A spin-off can't change net income" in the prompt helped one model and
+  hurt another, so the check lives in code, where it works for every model
+  ([why](DECISIONS.md#2026-10-17-reviewer-corrections---regression-tests-the-loop-end-to-end-on-real-data)).
+- **XBRL as the agent's input.** In production I'd take figures from XBRL. Here it's the answer
+  key, so extraction can be graded exactly ([why](DECISIONS.md#2026-10-21-xbrl-vs-reading-the-filing)).
+- **Smaller checkpoints inside the fan-out.** They'd make each branch durable but add latency. A
+  per-call cache gives the guarantee that matters: never pay twice
+  ([why](DECISIONS.md#2026-10-17-crash-rehearsal-found-a-gap-the-unit-test-couldnt)).
+- **Postgres and a hosted deployment.** One machine and one review team. The same SQL and the
+  checkpointer swap to Postgres when it needs to scale
+  ([why](DECISIONS.md#2026-10-23-between-runs-decision-history-run-identity-leases-authentication)).
+
 ## 5. One failure, start to finish
 
 GE's 2022 net income ($225 million, later $339 million) shaped most of this project:
