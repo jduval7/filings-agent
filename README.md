@@ -181,18 +181,14 @@ where the search really is open-ended and runs only when a reviewer asks
 **Framework patterns.** Where LangGraph or LangChain documents a way to do something, the code
 uses it instead of a hand-made version:
 
-- The review pauses with `interrupt()`. An invalid answer is asked again by routing back to the
-  review step through a conditional edge, as LangGraph's interrupts guide recommends, never by
-  looping around `interrupt()` inside the node.
-- The agents retry a throttled model call with LangChain's `ModelRetryMiddleware`, and research
-  retries a briefly unavailable source with `ToolRetryMiddleware`, so one throttle doesn't fail a
-  whole investigation. They share one definition of a transient error with the graph's
-  `RetryPolicy` (`llm/transient.py`), and every attempt goes through the spend guard.
-- The agents' cost is bounded with `ModelCallLimitMiddleware` and `ToolCallLimitMiddleware`, and
-  their answers use `ToolStrategy` structured output, which behaves the same on every model.
-- The research investigations run in parallel on LangChain's `ContextThreadPoolExecutor`, which
-  carries the tracing context into each thread, so all of them nest under the research step in
-  LangSmith.
+- The review pauses with `interrupt()` and asks again after an invalid answer by routing back
+  through a conditional edge, as LangGraph's interrupts guide recommends, never by looping.
+- The agents retry throttled model calls and flaky sources with LangChain's `ModelRetryMiddleware`
+  and `ToolRetryMiddleware`, sharing one definition of a transient error with the graph's
+  `RetryPolicy`. Call-limit middleware bounds their cost, and `ToolStrategy` keeps structured
+  answers the same on every model.
+- Parallel research runs on LangChain's `ContextThreadPoolExecutor`, so every investigation's trace
+  nests under the research step in LangSmith.
 
 ### The review card
 
@@ -385,16 +381,11 @@ Triage is plain code with no model call, so it has no trace.
 
 ## 10. Run it yourself
 
-**See everything without credentials: `make demo`.** It needs only `uv` and Node. It opens the review
-screen with a Demo panel of nine scenes, one per design decision: the fan-out, the easy lane, a
-review, research, a published run, a crash and resume, two reviewers across runs, annotations, and
-the evals. Each scene has an **In LangSmith** strip: the page to open and what to point at. They run
-on the real graph and API, with filings and model answers recorded in `demo/data/`; a model call
-that wasn't recorded is refused, never sent. With no LangSmith key the scenes link to the public
-traces and datasets. With a key in `.env`, the scenes' own runs are traced to the project
-`filings-agent-demo` and monitored like production (online checks, reviewer feedback, an annotation
-queue). `make demo-studio` opens the same graph in LangGraph Studio, also on the recordings. CI runs
-`make demo-check` on every pull request. Each scene explains itself on screen.
+**See everything without credentials: `make demo`.** It needs only `uv` and Node, and opens the
+review screen with a Demo panel of nine scenes, one per design decision, each linking to its
+traces in LangSmith. It runs the real graph and API on filings and model answers recorded in
+`demo/data/`, so no model call is ever sent. `make demo-studio` opens the same graph in LangGraph
+Studio. CI runs `make demo-check` on every pull request.
 
 To run it on live data:
 
@@ -405,34 +396,11 @@ make data               # download 95 reports, build the answer key and eval dat
 make check              # ruff + pyright strict + 428 tests (no network, no LLM)
 
 uv run filings-agent run --tickers GE,NVDA                  # runs, then pauses for review
-uv run filings-agent cards --thread <id>                    # the review cards it's waiting on
 uv run filings-agent review --thread <id> --tickers GE,NVDA --decisions decisions.json
 ```
 
-One decision per change waiting for review, for example:
-
-```json
-{"GE:net_income:FY2022": {"action": "accept", "correct_cause": "accounting_change"},
- "GE:revenue:FY2022":    {"action": "research", "note": "check the 8-K for the Vernova spin-off"},
- "X:cash:FY2023":        {"action": "escalate", "note": "none of these fit"}}
-```
-
-**Review screen:** `make web && make serve`, then open http://localhost:8000. Try NVDA first (stock
-splits, all confirmed by code, nothing to review), then GE (ten changes need a decision). You can
-watch the run, decide each card, and see the result publish.
-
-**LangGraph Studio:** `AWS_PROFILE=... make studio`, then open
-`https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024` in Chrome and enter
-`{"tickers": ["NVDA"]}`. It runs step by step and pauses at review.
-
-**HTTP API** (`make serve`, port 8000):
-
-| | |
-|---|---|
-| `POST /analyses` | Start a run. Sending the same request again returns the same run. An `Idempotency-Key` header names the request; reusing a key with a different request is refused (422). A new report on disk or a changed setting counts as a new request. `fresh: true` always starts a new run. |
-| `GET /analyses`, `GET /analyses/{id}` | Recent runs; one run's status, figures, cards waiting for review and memo. |
-| `GET /analyses/{id}/events` | Live progress (Server-Sent Events). |
-| `POST /analyses/{id}/review` | A decision for every waiting change, plus the `review_token` of the cards you saw. The server records who decided and when. |
+The review screen (`make web && make serve`), Studio on live data, the decisions file and the HTTP
+API are in [RUNBOOK.md](RUNBOOK.md#1-running-an-analysis).
 
 ## 11. Safeguards
 
@@ -441,19 +409,13 @@ watch the run, decide each card, and see the result publish.
 | The model invents a number or a quote | every figure must be printed in the statement and every quote must appear word for word, or the answer becomes "unknown" | `steps/extract.py`, `steps/reconcile.py`, `research/agent.py` |
 | A real quote supports the wrong reason | accounting rules (citing ASC 260-10-55-12 and ASC 205-20-45-3A) rule reasons out; only answers code fully confirms skip review | `steps/triage.py` |
 | Reviewers approve whatever the AI says | the card never shows the agent's answer, and picking a reason code ruled out shows a warning | `steps/card.py`, `web/` |
-| A wrong answer gets published | nothing publishes without a person's decision unless code confirmed it; incomplete or out-of-date reviews are refused | `graph/build.py`, `api/app.py` |
-| A later run erases a reviewer's decision | every decision is kept in the ledger's history, and a person's choice outranks an escalation or an automatic answer | `storage/ledger.py` |
-| Two processes run the same analysis | each run holds a lock in the database while it runs | `storage/leases.py` |
-| Anyone can approve figures | API tokens, with the reviewer's name saved on each decision; without tokens the server only accepts local connections | `api/app.py`, `cli.py` |
 | Instructions hidden in a web page | fetched text is treated as data; research only reads allowed sites and can only cite pages it read; tested on the agent version (planted instruction followed 0 of 3 times) | `research/sources.py`, agent eval |
 | Runaway cost | every Bedrock call reserves its worst-case cost against a $30 project cap and a monthly account cap before it's sent; research runs only when a reviewer asks | `llm/spend_guard.py` |
-| The judge grading its own work | the config refuses a judge that is also a writer | `config.py` |
-| Secrets in CI | no long-lived keys: AWS access through OIDC, limited to calling Bedrock | `.github/workflows/ci.yml` |
 
-**Personal data:** the inputs are public SEC filings. The only personal data stored is what
-reviewers enter (their name, decisions and notes, in the local ledger and in LangSmith) and the SEC
-contact email in `SEC_USER_AGENT`, which is sent only to sec.gov as the SEC requires. In production,
-reviewer notes would be deleted after a set period and kept out of shared datasets.
+**Personal data:** the inputs are public SEC filings; the only personal data is what reviewers
+enter and the SEC contact email. The full list of safeguards (publishing, decisions across runs,
+concurrency, authentication, CI secrets) and how personal data is handled are in
+[RUNBOOK.md](RUNBOOK.md#12-safeguards-and-personal-data).
 
 ## 12. What the brief asked for
 

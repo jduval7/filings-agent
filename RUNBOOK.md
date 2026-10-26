@@ -89,6 +89,36 @@ sqlite3 data/ledger.sqlite "SELECT seq, thread_id, decision, actor, decided_at, 
 After every real run the CLI/API posts **online checks** to the trace and routes it to the review
 queue if a human is needed (section 7).
 
+**HTTP API** (`make serve`, port 8000):
+
+| | |
+|---|---|
+| `POST /analyses` | Start a run. Sending the same request again returns the same run. An `Idempotency-Key` header names the request; reusing a key with a different request is refused (422). A new report on disk or a changed setting counts as a new request. `fresh: true` always starts a new run. |
+| `GET /analyses`, `GET /analyses/{id}` | Recent runs; one run's status, figures, cards waiting for review and memo. |
+| `GET /analyses/{id}/events` | Live progress (Server-Sent Events). |
+| `POST /analyses/{id}/review` | A decision for every waiting change, plus the `review_token` of the cards you saw. The server records who decided and when. |
+
+## 11. Safeguards
+
+| Risk | Safeguard | Where |
+|---|---|---|
+| The model invents a number or a quote | every figure must be printed in the statement and every quote must appear word for word, or the answer becomes "unknown" | `steps/extract.py`, `steps/reconcile.py`, `research/agent.py` |
+| A real quote supports the wrong reason | accounting rules (citing ASC 260-10-55-12 and ASC 205-20-45-3A) rule reasons out; only answers code fully confirms skip review | `steps/triage.py` |
+| Reviewers approve whatever the AI says | the card never shows the agent's answer, and picking a reason code ruled out shows a warning | `steps/card.py`, `web/` |
+| A wrong answer gets published | nothing publishes without a person's decision unless code confirmed it; incomplete or out-of-date reviews are refused | `graph/build.py`, `api/app.py` |
+| A later run erases a reviewer's decision | every decision is kept in the ledger's history, and a person's choice outranks an escalation or an automatic answer | `storage/ledger.py` |
+| Two processes run the same analysis | each run holds a lock in the database while it runs | `storage/leases.py` |
+| Anyone can approve figures | API tokens, with the reviewer's name saved on each decision; without tokens the server only accepts local connections | `api/app.py`, `cli.py` |
+| Instructions hidden in a web page | fetched text is treated as data; research only reads allowed sites and can only cite pages it read; tested on the agent version (planted instruction followed 0 of 3 times) | `research/sources.py`, agent eval |
+| Runaway cost | every Bedrock call reserves its worst-case cost against a $30 project cap and a monthly account cap before it's sent; research runs only when a reviewer asks | `llm/spend_guard.py` |
+| The judge grading its own work | the config refuses a judge that is also a writer | `config.py` |
+| Secrets in CI | no long-lived keys: AWS access through OIDC, limited to calling Bedrock | `.github/workflows/ci.yml` |
+
+**Personal data:** the inputs are public SEC filings. The only personal data stored is what
+reviewers enter (their name, decisions and notes, in the local ledger and in LangSmith) and the SEC
+contact email in `SEC_USER_AGENT`, which is sent only to sec.gov as the SEC requires. In production,
+reviewer notes would be deleted after a set period and kept out of shared datasets.
+
 ## 2. Where everything is in LangSmith
 
 | What | Where | What to look at |
@@ -283,3 +313,24 @@ retries. Compare `spend` with Cost Explorer now and then: spend made elsewhere i
 | `filings-agent queue setup` | create/verify the annotation queue |
 | `filings-agent run / review / serve` | operate the agent |
 | `make studio` | LangGraph Studio server with tracing on |
+
+## 12. Safeguards and personal data
+
+| Risk | Safeguard | Where |
+|---|---|---|
+| The model invents a number or a quote | every figure must be printed in the statement and every quote must appear word for word, or the answer becomes "unknown" | `steps/extract.py`, `steps/reconcile.py`, `research/agent.py` |
+| A real quote supports the wrong reason | accounting rules (citing ASC 260-10-55-12 and ASC 205-20-45-3A) rule reasons out; only answers code fully confirms skip review | `steps/triage.py` |
+| Reviewers approve whatever the AI says | the card never shows the agent's answer, and picking a reason code ruled out shows a warning | `steps/card.py`, `web/` |
+| A wrong answer gets published | nothing publishes without a person's decision unless code confirmed it; incomplete or out-of-date reviews are refused | `graph/build.py`, `api/app.py` |
+| A later run erases a reviewer's decision | every decision is kept in the ledger's history, and a person's choice outranks an escalation or an automatic answer | `storage/ledger.py` |
+| Two processes run the same analysis | each run holds a lock in the database while it runs | `storage/leases.py` |
+| Anyone can approve figures | API tokens, with the reviewer's name saved on each decision; without tokens the server only accepts local connections | `api/app.py`, `cli.py` |
+| Instructions hidden in a web page | fetched text is treated as data; research only reads allowed sites and can only cite pages it read; tested on the agent version (planted instruction followed 0 of 3 times) | `research/sources.py`, agent eval |
+| Runaway cost | every Bedrock call reserves its worst-case cost against a $30 project cap and a monthly account cap before it's sent; research runs only when a reviewer asks | `llm/spend_guard.py` |
+| The judge grading its own work | the config refuses a judge that is also a writer | `config.py` |
+| Secrets in CI | no long-lived keys: AWS access through OIDC, limited to calling Bedrock | `.github/workflows/ci.yml` |
+
+**Personal data:** the inputs are public SEC filings. The only personal data stored is what
+reviewers enter (their name, decisions and notes, in the local ledger and in LangSmith) and the SEC
+contact email in `SEC_USER_AGENT`, which is sent only to sec.gov as the SEC requires. In production,
+reviewer notes would be deleted after a set period and kept out of shared datasets.
