@@ -28,6 +28,7 @@ load_dotenv(ROOT / ".env")
 os.environ["LANGSMITH_TRACING"] = "false"
 
 from filings_agent.llm import spend_guard  # noqa: E402
+from filings_agent.preflight import friendly  # noqa: E402
 
 
 def _refuse(self: Any, model_id: str, payload: Any, max_tokens: int | None) -> Any:
@@ -263,6 +264,7 @@ CLAIMS: list[tuple[str, Callable[[dict[str, Any]], str]]] = [
 ]
 
 
+@friendly("make receipt")
 def main() -> int:
     if "--recompute" in sys.argv or not (ROOT / "data" / "receipt.json").exists():
         m = compute()

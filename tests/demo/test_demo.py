@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from langsmith.utils import LangSmithNotFoundError
 
 from filings_agent import demo
 from filings_agent.graph import build, runner
@@ -167,7 +168,7 @@ class FakeLangSmith:
         from types import SimpleNamespace
 
         if dataset_name.endswith("memo-dev"):
-            raise LookupError(dataset_name)
+            raise LangSmithNotFoundError(dataset_name)  # what the real client raises
         return SimpleNamespace(id=f"d-{dataset_name.split('/')[-1]}")
 
     def list_projects(self, *, reference_dataset_id: Any) -> list[Any]:

@@ -41,7 +41,7 @@ Every figure is graded against XBRL, the SEC's machine-readable copy of the same
 never sees it.
 
 Built with LangGraph and LangSmith, with models on Amazon Bedrock. Python 3.12, FastAPI,
-pyright strict, 428 offline tests, and a React review screen for the person in the loop.
+pyright strict, 433 offline tests, and a React review screen for the person in the loop.
 
 > **Screen recording:** [youtu.be/3K4nv5uo2GY](https://youtu.be/3K4nv5uo2GY) · **Repository:** [github.com/jduval7/filings-agent](https://github.com/jduval7/filings-agent)
 
@@ -393,11 +393,21 @@ To run it on live data:
 make setup
 cp .env.example .env    # SEC_USER_AGENT, LANGSMITH_API_KEY, LANGSMITH_TRACING=true, AWS_PROFILE (Bedrock)
 make data               # download 95 reports, build the answer key and eval datasets (cached)
-make check              # ruff + pyright strict + 428 tests (no network, no LLM)
+make check              # ruff + pyright strict + 433 tests (no network, no LLM)
 
 uv run filings-agent run --tickers GE,NVDA                  # runs, then pauses for review
 uv run filings-agent review --thread <id> --tickers GE,NVDA --decisions decisions.json
 ```
+
+What each command needs (anything missing is named in one line, never a crash):
+
+| Needs | Commands |
+|---|---|
+| nothing | `make demo`, `make demo-check`, `make demo-studio`, `make check`, `make demo-links` |
+| `SEC_USER_AGENT` | `make data` (downloads the filings and builds the eval datasets) |
+| the eval data and AWS Bedrock | `filings-agent run`, `make serve`, `make studio`, `make smoke`, `make gate` |
+| the eval data and the model cache | `make receipt` (recomputes every number in these docs) |
+| a LangSmith API key | `make import-qa`, and workspace links in `make demo-links` |
 
 The review screen (`make web && make serve`), Studio on live data, the decisions file and the HTTP
 API are in [RUNBOOK.md](RUNBOOK.md#1-running-an-analysis).

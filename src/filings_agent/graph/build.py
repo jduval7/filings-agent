@@ -71,6 +71,7 @@ from filings_agent.storage.ledger import Correction, Decided, Ledger, filing_set
 # instead of replaying one made by the old code.
 GRAPH_VERSION = 1
 
+
 class Researching(Protocol):
     def research(self, task: ReconcileTask, hint: str, round_: int) -> ResearchResult: ...
 

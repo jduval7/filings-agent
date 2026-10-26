@@ -38,6 +38,9 @@ EXPECTED = {  # scene -> the status its run must be in once seeded
 }
 
 
+from filings_agent.preflight import friendly  # noqa: E402
+
+
 def check(state: Path) -> list[str]:
     """Seed every scene offline into `state` and say what's wrong with each (empty = all good)."""
     from filings_agent.graph.runner import get_status, shared_ledger
@@ -118,6 +121,7 @@ def record() -> None:
         sys.exit(1)
 
 
+@friendly("demo")
 def main() -> None:
     parser = argparse.ArgumentParser(prog="demo")
     sub = parser.add_subparsers(dest="cmd", required=True)

@@ -20,7 +20,9 @@ class SecConfig(BaseModel):
     def user_agent(self) -> str:
         ua = os.environ.get(self.user_agent_env, "").strip()
         if not ua:
-            raise RuntimeError(
+            from filings_agent.preflight import SetupError
+
+            raise SetupError(
                 f"Set {self.user_agent_env}='Your Name you@example.com' (SEC requires a contact)."
             )
         return ua

@@ -29,6 +29,7 @@ from filings_agent.datasets import (
 )
 from filings_agent.domain import FilingRef, GoldFact
 from filings_agent.evals.online import monitor
+from filings_agent.preflight import friendly
 from filings_agent.sec.filings import SecSource
 from filings_agent.sec.gold import build_gold, find_discrepancies
 from filings_agent.sec.http import SecHttp
@@ -140,6 +141,7 @@ def _langsmith() -> Any:
     return Client()
 
 
+@friendly("filings-agent")
 def main() -> None:
     load_dotenv()
     parser = argparse.ArgumentParser(prog="filings-agent")

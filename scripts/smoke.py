@@ -29,6 +29,9 @@ MAX_COST_USD = 0.10  # cached runs cost ~$0; a fresh memo is a cent or two
 FAILURES: list[str] = []
 
 
+from filings_agent.preflight import friendly  # noqa: E402
+
+
 def check(name: str, ok: bool, detail: str = "") -> None:
     print(f"  {'PASS' if ok else 'FAIL'}  {name}" + (f"  ({detail})" if detail and not ok else ""))
     if not ok:
@@ -80,6 +83,7 @@ def start(client: httpx.Client, key: str, tickers: list[str]) -> dict[str, Any]:
     return dict(resp.json())
 
 
+@friendly("make smoke")
 def main() -> int:
     port = spare_port()
     # Its runs go in a throwaway folder, not the demo's run list (filings and LLM cache are shared).

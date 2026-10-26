@@ -12,6 +12,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from langsmith.utils import LangSmithNotFoundError
+
 BASE = "https://smith.langchain.com"
 
 # Public links (no LangSmith account needed), created 2026-10-22. Shared on purpose: SEC filings
@@ -94,7 +96,7 @@ def workspace_links(client: Any, project: str = "filings-agent") -> dict[str, st
     for key, (dataset, prefixes) in COMPARISONS.items():
         try:
             ds = client.read_dataset(dataset_name=dataset)
-        except Exception:
+        except LangSmithNotFoundError:  # not uploaded in this workspace: no link
             continue
         exps = [e for p in prefixes if (e := _latest(client, ds.id, p))]
         if exps:
@@ -103,7 +105,7 @@ def workspace_links(client: Any, project: str = "filings-agent") -> dict[str, st
     try:
         corr = client.read_dataset(dataset_name="filings-agent/reconcile-corrections")
         out["corrections"] = f"{BASE}/o/{org}/datasets/{corr.id}"
-    except Exception:
+    except LangSmithNotFoundError:  # no corrections exported yet
         pass
     if q := queue_url(client, org, "filings-agent: review"):
         out["queue"] = q
